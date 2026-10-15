@@ -1,0 +1,6 @@
+{
+  "name": "Sports Pulse",
+  "description": "Discover and book premier sports venues, courts, and certified coaching academies across Bengaluru.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
