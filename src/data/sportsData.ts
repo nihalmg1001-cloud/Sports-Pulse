@@ -1,3 +1,11 @@
+import heroArenaImg from '../assets/images/hero_bengaluru_sports_complex_1792030417535.jpg';
+import badmintonImg from '../assets/images/court_badminton_arena_1792030417770.jpg';
+import footballImg from '../assets/images/court_football_turf_1792030417670.jpg';
+import tennisImg from '../assets/images/court_tennis_clay_1792030418818.jpg';
+import coachImg from '../assets/images/academy_training_coach_1792030419195.jpg';
+
+export { heroArenaImg, badmintonImg, footballImg, tennisImg, coachImg };
+
 export interface Venue {
   id: string;
   name: string;
@@ -100,7 +108,7 @@ export const VENUES_DATA: Venue[] = [
     courtsCount: 8,
     surfaceType: 'BWF Approved 5mm Teak-Cushioned Synthetic Mat',
     amenities: ['Floodlights', 'Locker Rooms', 'Showers', 'Pro Shop', 'Ample Parking', 'Drinking Water', 'Equipment Rental'],
-    imageUrl: '/src/assets/images/court_badminton_arena_1792030417770.jpg',
+    imageUrl: badmintonImg,
     operatingHours: '05:30 AM - 11:30 PM',
     isPopular: true,
     featured: true,
@@ -125,7 +133,7 @@ export const VENUES_DATA: Venue[] = [
     courtsCount: 3,
     surfaceType: 'FIFA Quality Pro 50mm Non-Abrasive Monofilament Turf',
     amenities: ['Floodlights', 'Dressing Room', 'Live Match Streaming', 'Refreshment Lounge', 'Valet Parking', 'Football Boots on Rent'],
-    imageUrl: '/src/assets/images/court_football_turf_1792030417670.jpg',
+    imageUrl: footballImg,
     operatingHours: '05:00 AM - 01:00 AM',
     isPopular: true,
     featured: true,
@@ -150,7 +158,7 @@ export const VENUES_DATA: Venue[] = [
     courtsCount: 4,
     surfaceType: 'DecoTurf 8-Layer Acrylic Hard Court',
     amenities: ['Floodlights', 'Ball Boy Support', 'Pro Coach on Call', 'Showers', 'Pro Shop', 'Parking'],
-    imageUrl: '/src/assets/images/court_tennis_clay_1792030418818.jpg',
+    imageUrl: tennisImg,
     operatingHours: '06:00 AM - 10:00 PM',
     isPopular: true,
     featured: true,
@@ -175,7 +183,7 @@ export const VENUES_DATA: Venue[] = [
     courtsCount: 8,
     surfaceType: 'Ozone-Purified Heated Tile Pool (Chlorine-Free)',
     amenities: ['Certified Lifeguards', 'Heated Water', 'Steam & Sauna', 'Separate Women Batches', 'Lockers & Hairdryers'],
-    imageUrl: '/src/assets/images/hero_bengaluru_sports_complex_1792030417535.jpg',
+    imageUrl: heroArenaImg,
     operatingHours: '06:00 AM - 09:30 PM',
     isPopular: false,
     featured: false,
@@ -200,7 +208,7 @@ export const VENUES_DATA: Venue[] = [
     courtsCount: 4,
     surfaceType: 'Heavy-Density 35mm Astroturf with High Rebound Enclosure',
     amenities: ['Automated Bowling Machines', 'Full Net Enclosure', 'Speed Radar', 'Refreshment Cafe', 'Ample Parking'],
-    imageUrl: '/src/assets/images/court_football_turf_1792030417670.jpg',
+    imageUrl: footballImg,
     operatingHours: '06:00 AM - Midnight',
     isPopular: true,
     featured: false,
@@ -225,7 +233,7 @@ export const VENUES_DATA: Venue[] = [
     courtsCount: 6,
     surfaceType: 'Ultra-Flex Outdoor Polymer Tile Deck',
     amenities: ['Paddle & Ball Rental', 'Scoreboard Displays', 'Chilled Hydration Station', 'Floodlights', 'Community Lounge'],
-    imageUrl: '/src/assets/images/court_badminton_arena_1792030417770.jpg',
+    imageUrl: badmintonImg,
     operatingHours: '06:00 AM - 11:00 PM',
     isPopular: true,
     featured: true,
@@ -250,7 +258,7 @@ export const VENUES_DATA: Venue[] = [
     courtsCount: 6,
     surfaceType: 'Teak Wood Sprung Flooring with Non-Skid BWF Overlay',
     amenities: ['Floodlights', 'Wooden Flooring', 'Changing Rooms', 'Drinking Water', 'Two-Wheeler Parking'],
-    imageUrl: '/src/assets/images/court_badminton_arena_1792030417770.jpg',
+    imageUrl: badmintonImg,
     operatingHours: '05:00 AM - 10:30 PM',
     isPopular: false,
     featured: false,
@@ -275,7 +283,7 @@ export const VENUES_DATA: Venue[] = [
     courtsCount: 3,
     surfaceType: 'FIBA Certified Hardwood Maple Surface',
     amenities: ['Breakaway Rims', 'Electronic Shot Clocks', 'First Aid Center', 'Spectator Bleachers', 'Parking'],
-    imageUrl: '/src/assets/images/court_tennis_clay_1792030418818.jpg',
+    imageUrl: tennisImg,
     operatingHours: '06:00 AM - 10:00 PM',
     isPopular: false,
     featured: false,
@@ -304,7 +312,7 @@ export const COACHES_DATA: Coach[] = [
     activeStudents: 48,
     certifications: ['BWF Level 2 Certified Coach', 'NIS Sports Authority of India Diploma'],
     highlights: ['Mentored 4 state under-15 medalists', 'Focus on biomechanics and footwork', 'Video analysis sessions included'],
-    imageUrl: '/src/assets/images/academy_training_coach_1792030419195.jpg',
+    imageUrl: coachImg,
     batchSchedule: 'Mon, Wed, Fri · 06:30 AM & 05:00 PM'
   },
   {
@@ -323,7 +331,7 @@ export const COACHES_DATA: Coach[] = [
     activeStudents: 34,
     certifications: ['ITF Level 2 Coach', 'PTR Professional Tennis Registry Member'],
     highlights: ['Former AITA Top 50 singles player', 'Specializes in topspin mechanics & match play', 'Personalized fitness conditioning'],
-    imageUrl: '/src/assets/images/academy_training_coach_1792030419195.jpg',
+    imageUrl: coachImg,
     batchSchedule: 'Tue, Thu, Sat · 06:00 AM & 04:30 PM'
   },
   {
@@ -342,7 +350,7 @@ export const COACHES_DATA: Coach[] = [
     activeStudents: 75,
     certifications: ['AFC "A" Coaching License', 'UEFA "B" Certificate in Grassroots Tactics'],
     highlights: ['Curriculum modeled on European youth academies', 'Small-sided games & tactical positional sense', 'Weekend competitive matches'],
-    imageUrl: '/src/assets/images/academy_training_coach_1792030419195.jpg',
+    imageUrl: coachImg,
     batchSchedule: 'Tue, Thu, Sat · 05:30 PM - 07:00 PM'
   },
   {
@@ -361,7 +369,7 @@ export const COACHES_DATA: Coach[] = [
     activeStudents: 60,
     certifications: ['ASCA Level 3 American Swimming Coaches Association', 'Red Cross Water Safety Instructor'],
     highlights: ['Adult fear-of-water elimination master', 'Individual underwater stroke correction', 'Safe heated ozone pool facility'],
-    imageUrl: '/src/assets/images/academy_training_coach_1792030419195.jpg',
+    imageUrl: coachImg,
     batchSchedule: 'Mon to Fri · 06:00 AM & 06:30 PM'
   },
   {
@@ -380,7 +388,7 @@ export const COACHES_DATA: Coach[] = [
     activeStudents: 52,
     certifications: ['BCCI Level 1 Certified', 'Former Ranji Trophy Squad Member'],
     highlights: ['Bowling machine drills against pace & spin', 'Match simulations on natural turf wickets', 'Mental toughness conditioning'],
-    imageUrl: '/src/assets/images/academy_training_coach_1792030419195.jpg',
+    imageUrl: coachImg,
     batchSchedule: 'Wed, Fri, Sun · 04:00 PM - 06:30 PM'
   },
   {
@@ -399,7 +407,7 @@ export const COACHES_DATA: Coach[] = [
     activeStudents: 40,
     certifications: ['IPTP Professional Certified Pickleball Coach', 'All India Pickleball Association Official'],
     highlights: ['Learn dinking, third-shot drops & kitchen rules', 'Fun high-cardio adult fitness sessions', 'Paddle demo try-outs included'],
-    imageUrl: '/src/assets/images/academy_training_coach_1792030419195.jpg',
+    imageUrl: coachImg,
     batchSchedule: 'Sat & Sun · 07:00 AM - 09:00 AM'
   }
 ];

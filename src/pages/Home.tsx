@@ -13,7 +13,7 @@ import {
   Calendar,
   CheckCircle2
 } from 'lucide-react';
-import { Venue, VENUES_DATA, SPORTS, LOCALITIES, COACHES_DATA } from '../data/sportsData';
+import { Venue, VENUES_DATA, SPORTS, LOCALITIES, COACHES_DATA, heroArenaImg, coachImg } from '../data/sportsData';
 import { VenueCard } from '../components/VenueCard';
 
 interface HomeProps {
@@ -162,7 +162,7 @@ export const Home: React.FC<HomeProps> = ({ onBookVenue, onLocalityChange }) => 
               <div className="relative rounded-3xl overflow-hidden glass-card p-2 border border-slate-700/60 shadow-2xl group">
                 <div className="relative aspect-[4/3] rounded-2xl overflow-hidden">
                   <img
-                    src="/src/assets/images/hero_bengaluru_sports_complex_1792030417535.jpg"
+                    src={heroArenaImg}
                     alt="Premier sports arena complex in Bengaluru"
                     referrerPolicy="no-referrer"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
@@ -340,7 +340,7 @@ export const Home: React.FC<HomeProps> = ({ onBookVenue, onLocalityChange }) => 
             <div className="lg:col-span-5">
               <div className="relative rounded-2xl overflow-hidden aspect-[4/3] border border-slate-700/80 shadow-xl">
                 <img
-                  src="/src/assets/images/academy_training_coach_1792030419195.jpg"
+                  src={coachImg}
                   alt="Certified badminton coach mentoring junior players"
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-cover"
