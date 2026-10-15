@@ -62,7 +62,7 @@ export const AiConcierge: React.FC<AiConciergeProps> = ({
     }
   }, [messages, isOpen]);
 
-  const handleSend = (textToSend?: string) => {
+  const handleSend = async (textToSend?: string) => {
     const query = (textToSend || inputText).trim();
     if (!query) return;
 
@@ -78,36 +78,64 @@ export const AiConcierge: React.FC<AiConciergeProps> = ({
     setInputText('');
     setIsTyping(true);
 
-    // AI Logic processing query against Bengaluru sports dataset
-    setTimeout(() => {
+    try {
+      // Gather recent message history to provide conversational context
+      const history = messages.slice(-6).map((m) => ({
+        role: m.sender,
+        text: m.text,
+      }));
+
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: query, history }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error ${response.status}`);
+      }
+
+      const data = await response.json();
+      let matchedVenues: Venue[] = [];
+
+      if (Array.isArray(data.recommendedVenueIds) && data.recommendedVenueIds.length > 0) {
+        matchedVenues = data.recommendedVenueIds
+          .map((id: string) => VENUES_DATA.find((v) => v.id === id))
+          .filter((v: Venue | undefined): v is Venue => Boolean(v));
+      }
+
+      const aiMsg: Message = {
+        id: 'ai-' + Date.now(),
+        sender: 'ai',
+        text: data.reply || "I'm here to help you find and book the best courts and academies in Bengaluru!",
+        recommendedVenues: matchedVenues.length > 0 ? matchedVenues : undefined,
+        timestamp: 'Just now',
+      };
+
+      setMessages((prev) => [...prev, aiMsg]);
+    } catch (err) {
+      console.error('Error contacting Sports Pulse AI endpoint:', err);
+
+      // Intelligent local fallback matching Bengaluru courts
       const lower = query.toLowerCase();
-      let reply = '';
+      let reply = "Namaskara! I'm your Sports Pulse concierge. I'm ready to help you find courts, coach training, and match lobbies in Bengaluru!";
       let matchedVenues: Venue[] = [];
 
       if (lower.includes('badminton') || lower.includes('shuttle')) {
-        matchedVenues = VENUES_DATA.filter(v => v.sports.includes('Badminton'));
-        if (lower.includes('sahakar') || lower.includes('yelahanka')) {
-          matchedVenues = matchedVenues.filter(v => v.locality === 'Yelahanka' || v.locality === 'Sahakar Nagar');
-          reply = "I found top-rated badminton courts in North Bengaluru! Velocity Sports Arena in Yelahanka has 8 BWF-approved synthetic courts with glare-free lighting at ₹450/hr.";
-        } else {
-          reply = "Here are premier badminton arenas across Bengaluru with BWF wooden and synthetic cushion flooring. Hourly rates start at ₹400/hr in Jayanagar and ₹450/hr in Yelahanka.";
-        }
+        matchedVenues = VENUES_DATA.filter((v) => v.sports.includes('Badminton'));
+        reply = "Looking for badminton? Velocity Sports Arena in Yelahanka offers 8 BWF-approved synthetic courts with glare-free LED lighting at ₹450/hr, and Jayanagar Elite Badminton Club features 6 sprung wooden courts at ₹400/hr.";
       } else if (lower.includes('football') || lower.includes('turf') || lower.includes('soccer')) {
-        matchedVenues = VENUES_DATA.filter(v => v.sports.includes('Football'));
-        reply = "For football, Apex Sky Turf in Indiranagar is a favorite! It's a rooftop FIFA-quality 50mm monofilament turf with floodlights and skyline views at ₹1,100/hr (fits 10 players comfortably, so ~₹110/person).";
+        matchedVenues = VENUES_DATA.filter((v) => v.sports.includes('Football'));
+        reply = "For football, Apex Sky Turf in Indiranagar is a rooftop 5-a-side FIFA-standard turf under floodlights at ₹1,100/hr (fits 10 players, ~₹110 each).";
       } else if (lower.includes('pickleball') || lower.includes('padel')) {
-        matchedVenues = VENUES_DATA.filter(v => v.sports.includes('Pickleball'));
-        reply = "Pickleball is booming in Bengaluru! Pulse Pickleball Hub in HSR Layout features 6 tournament-grade polymer tile courts at ₹550/hr, with paddle & ball rentals included.";
+        matchedVenues = VENUES_DATA.filter((v) => v.sports.includes('Pickleball'));
+        reply = "Pickleball is popular in Bengaluru! Pulse Pickleball Hub in HSR Layout features 6 tournament-grade polymer tile courts at ₹550/hr, complete with paddle and ball rentals.";
       } else if (lower.includes('tennis')) {
-        matchedVenues = VENUES_DATA.filter(v => v.sports.includes('Tennis'));
-        reply = "Grand Slam Tennis Club in Koramangala has 4 US Open DecoTurf acrylic hard courts with automated ball machines from ₹750/hr. We also have certified ITF coach Ananya Rao available for private drills.";
-      } else if (lower.includes('coach') || lower.includes('academy') || lower.includes('junior') || lower.includes('fee')) {
-        reply = "We have 6 accredited academies in Bengaluru with NIS and BWF/ITF certified trainers. Badminton coaching starts at ₹3,200/month with Coach Manjunath Gowda in Sahakar Nagar, and swimming at ₹2,500/month with Priya Sundaram in Yelahanka. All include a complimentary trial session!";
-      } else if (lower.includes('cost') || lower.includes('budget') || lower.includes('price')) {
-        reply = "On average in Bengaluru, badminton court sharing costs ~₹100-₹150 per person for an hour. Football turfs split among 10 players come out to ~₹110 per person. You can use our interactive Cost Estimator page to model monthly sports expenses!";
-      } else {
-        reply = `I searched our Bengaluru sports database for "${query}". Here are verified multi-sport venues with available slots today:`;
-        matchedVenues = VENUES_DATA.slice(0, 2);
+        matchedVenues = VENUES_DATA.filter((v) => v.sports.includes('Tennis'));
+        reply = "Grand Slam Tennis Club in Koramangala has 4 US Open DecoTurf acrylic hard courts with automated ball machines from ₹750/hr.";
+      } else if (lower.includes('swim') || lower.includes('pool')) {
+        matchedVenues = VENUES_DATA.filter((v) => v.sports.includes('Swimming'));
+        reply = "BlueZone Aquatics Center in Sahakar Nagar features a heated semi-Olympic 25m ozone-purified pool (chlorine-free) at ₹300/hr.";
       }
 
       const aiMsg: Message = {
@@ -115,12 +143,13 @@ export const AiConcierge: React.FC<AiConciergeProps> = ({
         sender: 'ai',
         text: reply,
         recommendedVenues: matchedVenues.length > 0 ? matchedVenues.slice(0, 2) : undefined,
-        timestamp: 'Just now'
+        timestamp: 'Just now',
       };
 
       setMessages((prev) => [...prev, aiMsg]);
+    } finally {
       setIsTyping(false);
-    }, 600);
+    }
   };
 
   return (
