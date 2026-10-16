@@ -29,10 +29,27 @@ interface AiConciergeProps {
 // Client-side initialization using VITE_GEMINI_API_KEY
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
+// Helper to detect 503 Service Unavailable / capacity errors
+const is503CapacityError = (err: any): boolean => {
+  if (!err) return false;
+  const status = err?.status || err?.statusCode || err?.code;
+  if (status === 503 || status === '503') return true;
+  const msg = String(err?.message || err || '').toLowerCase();
+  return (
+    msg.includes('503') ||
+    msg.includes('unavailable') ||
+    msg.includes('overloaded') ||
+    msg.includes('capacity') ||
+    msg.includes('high demand') ||
+    msg.includes('resource exhausted') ||
+    msg.includes('temporarily unavailable')
+  );
+};
+
 const SYSTEM_INSTRUCTION = `You are Sports Pulse AI, an intelligent sports & fitness concierge for Bengaluru.
 
 Persona & Tone:
-You are friendly, energetic, knowledgeable, and distinctly tuned to Bengaluru's active lifestyle. Speak naturally and concisely. You know about neighborhood traffic, weather patterns (monsoons requiring indoor courts, early morning crisp weather), and peak vs off-peak times.
+You are friendly, energetic, knowledgeable, and distinctly tuned to Bengaluru's active lifestyle. Speak naturally and concisely. Keep responses concise and around 200 words for normal queries, but without any strict token cutting or credit limits blocking longer output—provide thorough, complete explanations whenever detailed advice or comparisons are requested. You know about neighborhood traffic, weather patterns (monsoons requiring indoor courts, early morning crisp weather), and peak vs off-peak times.
 
 Web Data Context (Verified Bengaluru Sports Venues & Academies):
 1. Velocity Sports Arena (ID: "pulse-arena-yelahanka")
@@ -98,7 +115,7 @@ General Intelligence & Reasoning:
 
 Output Format:
 Always return a structured JSON object containing:
-- "reply": your natural conversational answer (may include formatted markdown bullets).
+- "reply": your natural conversational answer (around 200 words for normal queries, formatted cleanly with markdown bullets where helpful; no strict token cutting or limits blocking longer output).
 - "recommendedVenueIds": an array of exact venue ID strings from the verified database (e.g. ["pulse-arena-yelahanka"]) when recommending venues, or [] if no specific venue is recommended.`;
 
 export const AiConcierge: React.FC<AiConciergeProps> = ({
@@ -187,7 +204,7 @@ export const AiConcierge: React.FC<AiConciergeProps> = ({
         }
       ];
 
-      // Pure Gemini call with automatic 503 retry logic
+      // Pure Gemini call without any maxOutputTokens or credit limits
       const generateModelResponse = () =>
         ai.models.generateContent({
           model: 'gemini-3.8-flash',
@@ -213,27 +230,45 @@ export const AiConcierge: React.FC<AiConciergeProps> = ({
           }
         });
 
-      let response;
-      try {
-        response = await generateModelResponse();
-      } catch (callErr: any) {
-        // Automatic retry logic: if the API returns a 503 error, wait 1 second and retry once
-        const is503 =
-          callErr?.status === 503 ||
-          callErr?.code === 503 ||
-          callErr?.statusCode === 503 ||
-          (typeof callErr?.message === 'string' && callErr.message.includes('503'));
+      // Silent auto-retry loop for 503 capacity errors (retries in background without showing red error boxes)
+      let response: any = null;
+      const MAX_RETRIES = 3;
+      let attempt = 0;
 
-        if (is503) {
-          console.warn('Gemini 503 error detected. Waiting 1 second and retrying once automatically...');
-          await new Promise((resolve) => setTimeout(resolve, 1000));
+      while (attempt <= MAX_RETRIES) {
+        try {
           response = await generateModelResponse();
-        } else {
+          break;
+        } catch (callErr: any) {
+          if (is503CapacityError(callErr) && attempt < MAX_RETRIES) {
+            attempt++;
+            const backoffMs = attempt * 1200; // 1.2s, 2.4s, 3.6s
+            console.warn(`[Sports Pulse AI] 503 capacity error encountered (attempt ${attempt}/${MAX_RETRIES}). Retrying silently in background in ${backoffMs}ms...`);
+            await new Promise((resolve) => setTimeout(resolve, backoffMs));
+            continue;
+          }
+
+          // If capacity error persists after all retries, respond gracefully in the chat stream without any red error box
+          if (is503CapacityError(callErr)) {
+            console.warn('[Sports Pulse AI] 503 capacity sustained after retries; answering smoothly without red alert.');
+            const capacityFriendlyMsg: Message = {
+              id: 'ai-' + Date.now(),
+              sender: 'ai',
+              text: "Namaskara! Sports inquiry volume across Bengaluru is buzzing right now and the concierge was momentarily busy. I am ready for you—please ask your question again, or let me know if you would like court recommendations for Badminton, Football, or Tennis!",
+              isError: false,
+              timestamp: 'Just now'
+            };
+            setMessages((prev) => [...prev, capacityFriendlyMsg]);
+            setIsTyping(false);
+            return;
+          }
+
+          // Non-503 error (e.g. invalid API key)
           throw callErr;
         }
       }
 
-      const rawText = response.text || '';
+      const rawText = response?.text || '';
       let replyText = '';
       let recommendedIds: string[] = [];
 
@@ -261,7 +296,21 @@ export const AiConcierge: React.FC<AiConciergeProps> = ({
       setMessages((prev) => [...prev, aiMsg]);
     } catch (err: any) {
       console.error('Gemini API Error:', err);
-      // Display clear inline alert asking to set/verify VITE_GEMINI_API_KEY in Vercel
+
+      // Ensure 503 capacity errors never display a red error box
+      if (is503CapacityError(err)) {
+        const capacityMsg: Message = {
+          id: 'ai-' + Date.now(),
+          sender: 'ai',
+          text: "The sports concierge server is momentarily handling high volume across Bengaluru courts. Please send your question again in just a moment!",
+          isError: false,
+          timestamp: 'Just now'
+        };
+        setMessages((prev) => [...prev, capacityMsg]);
+        return;
+      }
+
+      // Display clear inline alert asking to set/verify VITE_GEMINI_API_KEY in Vercel for hard config errors
       const errorMsg: Message = {
         id: 'error-' + Date.now(),
         sender: 'ai',
