@@ -156,10 +156,10 @@ export const AiConcierge: React.FC<AiConciergeProps> = ({
         }
       ];
 
-      // Call Gemini 2.0 Flash with temperature: 0.7 and maxOutputTokens: 300
+      // Call Gemini 1.5 Flash strictly with temperature: 0.7 and maxOutputTokens: 300
       const generateModelResponse = () =>
         ai.models.generateContent({
-          model: 'gemini-2.0-flash',
+          model: 'gemini-1.5-flash',
           contents,
           config: {
             systemInstruction: SYSTEM_INSTRUCTION,
@@ -184,9 +184,9 @@ export const AiConcierge: React.FC<AiConciergeProps> = ({
           }
         });
 
-      // Silent auto-retry loop for 503 capacity errors (retries in background without showing error boxes)
+      // Silent auto-retry loop for 503 capacity errors (retries in background)
       let response: any = null;
-      const MAX_RETRIES = 3;
+      const MAX_RETRIES = 2;
       let attempt = 0;
 
       while (attempt <= MAX_RETRIES) {
@@ -202,21 +202,7 @@ export const AiConcierge: React.FC<AiConciergeProps> = ({
             continue;
           }
 
-          // If capacity error persists after retries, return smooth message without popup
-          if (is503CapacityError(callErr)) {
-            const capacityFriendlyMsg: Message = {
-              id: 'ai-' + Date.now(),
-              sender: 'ai',
-              text: "Namaskara! Bengaluru sports lines are buzzing right now. Velocity Sports Arena (Yelahanka, ₹450/hr) and Apex Sky Turf (Indiranagar, ₹1,100/hr) have open courts today. Please ask your question again in a moment!",
-              recommendedVenues: [VENUES_DATA[0], VENUES_DATA[1]],
-              isError: false,
-              timestamp: 'Just now'
-            };
-            setMessages((prev) => [...prev, capacityFriendlyMsg]);
-            setIsTyping(false);
-            return;
-          }
-
+          // Log and propagate error to main error-handling block
           throw callErr;
         }
       }
@@ -250,18 +236,39 @@ export const AiConcierge: React.FC<AiConciergeProps> = ({
 
       setMessages((prev) => [...prev, aiMsg]);
     } catch (err: any) {
-      console.warn('Gemini request handled gracefully:', err);
+      // Log the exact error to the console for thorough debugging
+      console.error('[AiConcierge] Gemini API Exception / Quota Error Details:', {
+        message: err?.message,
+        status: err?.status || err?.statusCode || err?.code,
+        name: err?.name,
+        error: err?.error || err,
+        stack: err?.stack,
+      });
 
-      // Smooth fallback message instead of raw JSON error popups
-      const smoothFallbackMsg: Message = {
+      const status = err?.status || err?.statusCode || err?.code;
+      const errorMsgText = String(err?.message || '');
+      const isQuotaError =
+        status === 429 ||
+        errorMsgText.includes('429') ||
+        errorMsgText.toLowerCase().includes('quota') ||
+        errorMsgText.toLowerCase().includes('resource has been exhausted') ||
+        errorMsgText.toLowerCase().includes('rate limit');
+
+      let userFacingText = '';
+      if (isQuotaError) {
+        userFacingText = `⚠️ Gemini API Quota Limit (429): Your Gemini API quota has been temporarily exhausted. Please verify your quota in Google AI Studio or try again shortly. (Full error logged to browser console)`;
+      } else {
+        userFacingText = `⚠️ Gemini API Error: ${errorMsgText || 'Failed to complete AI request'}. (Full error logged to browser console for debugging)`;
+      }
+
+      const debugErrorMsg: Message = {
         id: 'ai-' + Date.now(),
         sender: 'ai',
-        text: "Namaskara! I'm having a brief connection hiccup, but Bengaluru's top venues are ready for you. Velocity Sports Arena in Yelahanka (Badminton/Pickleball, ₹450/hr) and Apex Sky Turf in Indiranagar (5v5 Football, ₹1,100/hr) are available. Please feel free to ask again!",
-        recommendedVenues: [VENUES_DATA[0], VENUES_DATA[1]],
-        isError: false,
+        text: userFacingText,
+        isError: true,
         timestamp: 'Just now'
       };
-      setMessages((prev) => [...prev, smoothFallbackMsg]);
+      setMessages((prev) => [...prev, debugErrorMsg]);
     } finally {
       setIsTyping(false);
     }
