@@ -172,8 +172,8 @@ export const AiConcierge: React.FC<AiConciergeProps> = ({
     }
 
     try {
-      // Initialize Gemini directly in client with the specified key
-      const ai = new GoogleGenAI({ apiKey });
+      // Initialize Gemini directly in client passing import.meta.env.VITE_GEMINI_API_KEY
+      const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
       // Build conversation contents including previous messages for multi-turn context
       const contents = [
@@ -190,7 +190,7 @@ export const AiConcierge: React.FC<AiConciergeProps> = ({
       // Pure Gemini call with automatic 503 retry logic
       const generateModelResponse = () =>
         ai.models.generateContent({
-          model: 'gemini-2.5-flash',
+          model: 'gemini-3.8-flash',
           contents,
           config: {
             systemInstruction: SYSTEM_INSTRUCTION,
