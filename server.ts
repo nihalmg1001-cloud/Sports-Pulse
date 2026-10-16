@@ -83,10 +83,12 @@ app.post('/api/chat', async (req, res) => {
     // Attempt with primary model, retry once on transient failure
     try {
       const response = await ai.models.generateContent({
-        model: 'gemini-3.5-flash',
+        model: 'gemini-3.5-flash-lite',
         contents,
         config: {
           systemInstruction: SYSTEM_PROMPT,
+          temperature: 0.7,
+          maxOutputTokens: 250,
           responseMimeType: 'application/json',
           responseSchema: {
             type: Type.OBJECT,

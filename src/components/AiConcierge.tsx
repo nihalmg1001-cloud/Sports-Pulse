@@ -29,6 +29,22 @@ interface AiConciergeProps {
 // Client-side initialization using VITE_GEMINI_API_KEY
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
+// Helper to detect 429 Quota Exceeded / Rate Limit errors
+const is429QuotaError = (err: any): boolean => {
+  if (!err) return false;
+  const status = err?.status || err?.statusCode || err?.code;
+  if (status === 429 || status === '429') return true;
+  const msg = String(err?.message || err || '').toLowerCase();
+  return (
+    msg.includes('429') ||
+    msg.includes('quota') ||
+    msg.includes('resource has been exhausted') ||
+    msg.includes('resource_exhausted') ||
+    msg.includes('rate limit') ||
+    msg.includes('too many requests')
+  );
+};
+
 // Helper to detect 503 Service Unavailable / capacity errors
 const is503CapacityError = (err: any): boolean => {
   if (!err) return false;
@@ -41,7 +57,6 @@ const is503CapacityError = (err: any): boolean => {
     msg.includes('overloaded') ||
     msg.includes('capacity') ||
     msg.includes('high demand') ||
-    msg.includes('resource exhausted') ||
     msg.includes('temporarily unavailable')
   );
 };
@@ -156,15 +171,15 @@ export const AiConcierge: React.FC<AiConciergeProps> = ({
         }
       ];
 
-      // Call Gemini 3.5 Flash with temperature: 0.7 and maxOutputTokens: 300
+      // Call Gemini 3.5 Flash Lite with temperature: 0.7 and maxOutputTokens: 250
       const generateModelResponse = () =>
         ai.models.generateContent({
-          model: 'gemini-3.5-flash',
+          model: 'gemini-3.5-flash-lite',
           contents,
           config: {
             systemInstruction: SYSTEM_INSTRUCTION,
             temperature: 0.7,
-            maxOutputTokens: 300,
+            maxOutputTokens: 250,
             responseMimeType: 'application/json',
             responseSchema: {
               type: Type.OBJECT,
@@ -184,9 +199,9 @@ export const AiConcierge: React.FC<AiConciergeProps> = ({
           }
         });
 
-      // Silent auto-retry loop for temporary network hiccups & 503 capacity errors (retries in background without showing error banners)
+      // Exponential backoff & auto-retry wrapper: if a 429 Quota Exceeded error occurs, wait 2 seconds and retry automatically once behind the scenes
       let response: any = null;
-      const MAX_RETRIES = 2;
+      const MAX_RETRIES = 1;
       let attempt = 0;
 
       while (attempt <= MAX_RETRIES) {
@@ -194,6 +209,7 @@ export const AiConcierge: React.FC<AiConciergeProps> = ({
           response = await generateModelResponse();
           break;
         } catch (callErr: any) {
+          const is429 = is429QuotaError(callErr);
           const isTransientError =
             is503CapacityError(callErr) ||
             callErr?.name === 'TypeError' ||
@@ -201,10 +217,12 @@ export const AiConcierge: React.FC<AiConciergeProps> = ({
             String(callErr?.message || '').toLowerCase().includes('network') ||
             String(callErr?.message || '').toLowerCase().includes('timeout');
 
-          if (isTransientError && attempt < MAX_RETRIES) {
+          if ((is429 || isTransientError) && attempt < MAX_RETRIES) {
             attempt++;
-            const backoffMs = attempt * 1000;
-            console.warn(`[Sports Pulse AI] Temporary network hiccup / capacity error detected (attempt ${attempt}/${MAX_RETRIES}). Retrying silently in ${backoffMs}ms...`);
+            const backoffMs = is429 ? 2000 : 1500;
+            console.warn(
+              `[Sports Pulse AI] ${is429 ? '429 Quota Exceeded' : 'Temporary network/capacity hiccup'} detected. Waiting ${backoffMs}ms before retrying automatically once behind the scenes (attempt ${attempt}/${MAX_RETRIES})...`
+            );
             await new Promise((resolve) => setTimeout(resolve, backoffMs));
             continue;
           }
@@ -252,30 +270,29 @@ export const AiConcierge: React.FC<AiConciergeProps> = ({
         stack: err?.stack,
       });
 
-      const status = err?.status || err?.statusCode || err?.code;
-      const errorMsgText = String(err?.message || '');
-      const isQuotaError =
-        status === 429 ||
-        errorMsgText.includes('429') ||
-        errorMsgText.toLowerCase().includes('quota') ||
-        errorMsgText.toLowerCase().includes('resource has been exhausted') ||
-        errorMsgText.toLowerCase().includes('rate limit');
+      const isQuotaError = is429QuotaError(err);
 
       let userFacingText = '';
+      let isErrorFlag = true;
+
       if (isQuotaError) {
-        userFacingText = `⚠️ Gemini API Quota Limit (429): Your Gemini API quota has been temporarily exhausted. Please verify your quota in Google AI Studio or try again shortly. (Full error logged to browser console)`;
+        // If a second 429 error occurs, display a friendly message instead of raw error banners
+        userFacingText = "Sports Pulse AI is currently handling heavy traffic. Please wait a moment and try again!";
+        isErrorFlag = false;
       } else {
+        const errorMsgText = String(err?.message || '');
         userFacingText = `⚠️ Gemini API Error: ${errorMsgText || 'Failed to complete AI request'}. (Full error logged to browser console for debugging)`;
+        isErrorFlag = true;
       }
 
-      const debugErrorMsg: Message = {
+      const outcomeMsg: Message = {
         id: 'ai-' + Date.now(),
         sender: 'ai',
         text: userFacingText,
-        isError: true,
+        isError: isErrorFlag,
         timestamp: 'Just now'
       };
-      setMessages((prev) => [...prev, debugErrorMsg]);
+      setMessages((prev) => [...prev, outcomeMsg]);
     } finally {
       setIsTyping(false);
     }
