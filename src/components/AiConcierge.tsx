@@ -187,30 +187,51 @@ export const AiConcierge: React.FC<AiConciergeProps> = ({
         }
       ];
 
-      // Pure Gemini call — all user messages go directly to the model
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents,
-        config: {
-          systemInstruction: SYSTEM_INSTRUCTION,
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              reply: {
-                type: Type.STRING,
-                description: 'The natural conversational response to the user'
+      // Pure Gemini call with automatic 503 retry logic
+      const generateModelResponse = () =>
+        ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents,
+          config: {
+            systemInstruction: SYSTEM_INSTRUCTION,
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                reply: {
+                  type: Type.STRING,
+                  description: 'The natural conversational response to the user'
+                },
+                recommendedVenueIds: {
+                  type: Type.ARRAY,
+                  items: { type: Type.STRING },
+                  description: 'Exact venue IDs matching the user query from the database'
+                }
               },
-              recommendedVenueIds: {
-                type: Type.ARRAY,
-                items: { type: Type.STRING },
-                description: 'Exact venue IDs matching the user query from the database'
-              }
-            },
-            required: ['reply', 'recommendedVenueIds']
+              required: ['reply', 'recommendedVenueIds']
+            }
           }
+        });
+
+      let response;
+      try {
+        response = await generateModelResponse();
+      } catch (callErr: any) {
+        // Automatic retry logic: if the API returns a 503 error, wait 1 second and retry once
+        const is503 =
+          callErr?.status === 503 ||
+          callErr?.code === 503 ||
+          callErr?.statusCode === 503 ||
+          (typeof callErr?.message === 'string' && callErr.message.includes('503'));
+
+        if (is503) {
+          console.warn('Gemini 503 error detected. Waiting 1 second and retrying once automatically...');
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          response = await generateModelResponse();
+        } else {
+          throw callErr;
         }
-      });
+      }
 
       const rawText = response.text || '';
       let replyText = '';
