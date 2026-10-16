@@ -122,7 +122,7 @@ export default function App() {
           onClose={handleCloseBooking}
         />
 
-        {/* Floating AI Concierge Widget ("Ask Sports Pulse AI 🤖") */}
+        {/* Floating AI Concierge Widget ("Ask Pulse AI 🤖") */}
         <AiConcierge
           onBookCourt={handleOpenBooking}
         />

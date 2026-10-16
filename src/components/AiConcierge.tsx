@@ -61,10 +61,13 @@ const is503CapacityError = (err: any): boolean => {
   );
 };
 
-const SYSTEM_INSTRUCTION = `You are Sports Pulse AI, a quick Bengaluru sports concierge. Provide helpful, snappy answers strictly under 200 words.
+const SYSTEM_INSTRUCTION = `You are Pulse AI, a smart, professional, and energetic sports & fitness concierge for Bengaluru. Provide helpful, snappy answers strictly under 200 words.
 
 Persona & Tone:
-Friendly, energetic, distinctly local to Bengaluru. Keep answers snappy, clear, and strictly under 200 words.
+- Professional, welcoming, and sharp with an authentic modern Bengaluru vibe (knowledgeable about neighborhood hubs, ORR/Indiranagar/Koramangala/HSR scenes, early morning badminton runs, and weekend turf culture).
+- Strictly avoid rural/halli colloquialisms and never use street slang like "macha", "da", "guru", or over-the-top dialect. Keep it polished, clean, and courteous.
+- Maintain a contemporary, witty, and upbeat tone — like a well-informed local fitness friend who is organized and professional.
+- Keep answers snappy, structured, clear, and strictly under 200 words.
 
 Web Data Context (Verified Bengaluru Sports Venues & Academies):
 1. Velocity Sports Arena (ID: "pulse-arena-yelahanka"): Yelahanka, North BLR. Badminton, Pickleball. 8 synthetic courts. ₹450/hr.
@@ -78,7 +81,7 @@ Web Data Context (Verified Bengaluru Sports Venues & Academies):
 
 Reasoning:
 - Interpret indirect sports queries naturally (e.g. "hitting a green ball" = Tennis, "small rooftop nets" = 5v5 Football, "swimming without chlorine" = BlueZone ozone pool).
-- Match sports to fitness goals or recovery.
+- Match sports to fitness goals, skill levels, or recovery needs.
 
 Output Format:
 Always return a structured JSON object containing:
@@ -98,7 +101,7 @@ export const AiConcierge: React.FC<AiConciergeProps> = ({
     {
       id: 'welcome-1',
       sender: 'ai',
-      text: "Namaskara! I'm Sports Pulse AI, your intelligent Bengaluru sports concierge 🏸. Ask me anything about courts, turfs, pricing, sports recommendations for your fitness level, or indirect sports questions!",
+      text: "Namaskara! I'm Pulse AI, your sports & fitness concierge for Bengaluru 🏸. Ask me anything about court availability, turf pricing, fitness recommendations, or neighborhood sports hubs!",
       timestamp: 'Just now'
     }
   ]);
@@ -221,7 +224,7 @@ export const AiConcierge: React.FC<AiConciergeProps> = ({
             attempt++;
             const backoffMs = is429 ? 2000 : 1500;
             console.warn(
-              `[Sports Pulse AI] ${is429 ? '429 Quota Exceeded' : 'Temporary network/capacity hiccup'} detected. Waiting ${backoffMs}ms before retrying automatically once behind the scenes (attempt ${attempt}/${MAX_RETRIES})...`
+              `[Pulse AI] ${is429 ? '429 Quota Exceeded' : 'Temporary network/capacity hiccup'} detected. Waiting ${backoffMs}ms before retrying automatically once behind the scenes (attempt ${attempt}/${MAX_RETRIES})...`
             );
             await new Promise((resolve) => setTimeout(resolve, backoffMs));
             continue;
@@ -277,7 +280,7 @@ export const AiConcierge: React.FC<AiConciergeProps> = ({
 
       if (isQuotaError) {
         // If a second 429 error occurs, display a friendly message instead of raw error banners
-        userFacingText = "Sports Pulse AI is currently handling heavy traffic. Please wait a moment and try again!";
+        userFacingText = "Pulse AI is currently handling heavy traffic. Please wait a moment and try again!";
         isErrorFlag = false;
       } else {
         const errorMsgText = String(err?.message || '');
@@ -305,7 +308,7 @@ export const AiConcierge: React.FC<AiConciergeProps> = ({
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="group flex items-center gap-2.5 px-4 py-3 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-orange-500 hover:from-blue-700 hover:to-orange-600 text-white font-extrabold shadow-xl shadow-blue-500/25 hover:scale-105 transition-all cursor-pointer border border-white/30"
-          aria-label="Ask Sports Pulse AI Concierge"
+          aria-label="Ask Pulse AI Concierge"
         >
           <div className="relative">
             <Bot className="w-5 h-5 text-white" />
@@ -313,7 +316,7 @@ export const AiConcierge: React.FC<AiConciergeProps> = ({
             <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-orange-400 rounded-full" />
           </div>
           <span className="text-xs sm:text-sm font-extrabold tracking-tight">
-            Ask Sports Pulse AI 🤖
+            Ask Pulse AI 🤖
           </span>
         </button>
       </div>
@@ -330,7 +333,7 @@ export const AiConcierge: React.FC<AiConciergeProps> = ({
               </div>
               <div>
                 <h3 className="text-sm font-extrabold text-white flex items-center gap-1.5">
-                  Sports Pulse AI
+                  Pulse AI
                   <span className="text-[10px] font-bold text-orange-200 bg-white/20 px-1.5 py-0.5 rounded-full">Gemini</span>
                 </h3>
                 <p className="text-[11px] text-blue-100">Intelligent Bengaluru Sports & Fitness Concierge</p>
@@ -460,7 +463,7 @@ export const AiConcierge: React.FC<AiConciergeProps> = ({
                 type="text"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                placeholder="Ask Sports Pulse AI anything..."
+                placeholder="Ask Pulse AI anything..."
                 className="flex-1 px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:border-blue-600 placeholder:text-slate-400 font-medium"
               />
               <button
