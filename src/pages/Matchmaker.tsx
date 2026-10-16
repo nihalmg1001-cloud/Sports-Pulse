@@ -10,7 +10,8 @@ import {
   Filter, 
   MessageSquare, 
   X,
-  Share2
+  Share2,
+  CalendarCheck
 } from 'lucide-react';
 import { MatchLobby, MATCH_LOBBIES_DATA, SPORTS, LOCALITIES } from '../data/sportsData';
 
@@ -102,29 +103,29 @@ export const Matchmaker: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <div className="text-xs text-emerald-400 font-semibold tracking-wider uppercase mb-1 flex items-center gap-1.5">
-            <Users className="w-3.5 h-3.5" />
+          <div className="text-xs text-blue-600 font-bold tracking-wider uppercase mb-1 flex items-center gap-1.5">
+            <Users className="w-3.5 h-3.5 text-orange-500" />
             <span>Bengaluru Sports Community</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
             Player Matchmaker & Lobbies
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">
+          <p className="text-xs sm:text-sm text-slate-600 mt-1">
             Need an extra player for tonight&apos;s football turf or a doubles badminton partner in your locality? Connect and split court costs.
           </p>
         </div>
 
         <button
           onClick={() => setIsCreateModalOpen(true)}
-          className="self-start md:self-auto flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold text-xs sm:text-sm shadow-md shadow-emerald-500/20 transition-all cursor-pointer"
+          className="self-start md:self-auto flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs sm:text-sm shadow-md shadow-orange-500/20 transition-all cursor-pointer"
         >
-          <Plus className="w-4 h-4 text-slate-950 stroke-[2.5]" />
+          <Plus className="w-4 h-4 text-white stroke-[2.5]" />
           <span>Host a Game Lobby</span>
         </button>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="glass-panel rounded-2xl p-4 sm:p-5 border border-slate-800 space-y-4">
+      {/* Filter Tabs (Light Theme) */}
+      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
           
           {/* Sport buttons */}
@@ -133,10 +134,10 @@ export const Matchmaker: React.FC = () => {
               <button
                 key={sport.id}
                 onClick={() => setSelectedSport(sport.id)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   selectedSport === sport.id
-                    ? 'bg-emerald-500 text-slate-950 font-bold'
-                    : 'bg-slate-900 text-slate-300 hover:text-white border border-slate-800'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:bg-slate-100'
                 }`}
               >
                 {sport.name}
@@ -146,11 +147,11 @@ export const Matchmaker: React.FC = () => {
 
           {/* Locality dropdown */}
           <div className="flex items-center gap-2 text-xs">
-            <MapPin className="w-3.5 h-3.5 text-emerald-400" />
+            <MapPin className="w-3.5 h-3.5 text-orange-500" />
             <select
               value={selectedLocality}
               onChange={(e) => setSelectedLocality(e.target.value)}
-              className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs focus:outline-none focus:border-emerald-500"
+              className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-blue-600 cursor-pointer"
             >
               {LOCALITIES.map((loc) => (
                 <option key={loc} value={loc}>
@@ -172,10 +173,10 @@ export const Matchmaker: React.FC = () => {
           return (
             <div
               key={lobby.id}
-              className={`glass-card rounded-2xl p-5 sm:p-6 border flex flex-col justify-between transition-all ${
+              className={`bg-white rounded-3xl p-6 sm:p-7 border flex flex-col justify-between transition-all shadow-sm ${
                 lobby.isJoined
-                  ? 'border-emerald-500/60 shadow-lg shadow-emerald-500/10'
-                  : 'border-slate-800 hover:border-slate-700'
+                  ? 'border-blue-500 ring-2 ring-blue-500/20 shadow-md'
+                  : 'border-slate-200 hover:border-slate-300'
               }`}
             >
               <div className="space-y-4">
@@ -183,64 +184,64 @@ export const Matchmaker: React.FC = () => {
                 {/* Header row */}
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="flex items-center gap-2 text-[11px] text-slate-400 mb-1">
-                      <span className="font-semibold text-emerald-400">{lobby.sport}</span>
+                    <div className="flex items-center gap-2 text-[11px] text-slate-500 mb-1 font-semibold">
+                      <span className="font-bold text-orange-600">{lobby.sport}</span>
                       <span>·</span>
-                      <span className="text-slate-300">{lobby.skillLevel}</span>
+                      <span className="text-slate-600">{lobby.skillLevel}</span>
                     </div>
-                    <h3 className="text-lg font-bold text-white tracking-tight">
+                    <h3 className="text-lg font-extrabold text-slate-900 tracking-tight">
                       {lobby.title}
                     </h3>
                   </div>
 
                   <div className="text-right shrink-0">
-                    <div className="text-[10px] text-slate-500 uppercase">Share Per Player</div>
-                    <div className="text-base font-extrabold text-white font-mono tabular-nums">
+                    <div className="text-[10px] text-slate-400 uppercase font-bold">Share Per Player</div>
+                    <div className="text-lg font-extrabold text-blue-700 font-mono tabular-nums">
                       ₹{lobby.priceSharePerPerson}
                     </div>
                   </div>
                 </div>
 
                 {/* Venue and Timing info */}
-                <div className="space-y-1.5 text-xs text-slate-300 bg-slate-900/60 p-3 rounded-xl border border-slate-800/80">
+                <div className="space-y-1.5 text-xs text-slate-700 bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
                   <div className="flex items-center gap-2">
-                    <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                    <span className="font-medium text-slate-200">{lobby.venueName}</span>
+                    <MapPin className="w-3.5 h-3.5 text-orange-500 shrink-0" />
+                    <span className="font-bold text-slate-900">{lobby.venueName}</span>
                     <span className="text-slate-500">({lobby.locality})</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Clock className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                    <span>{lobby.dateTime}</span>
+                    <Clock className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    <span className="font-medium text-slate-800">{lobby.dateTime}</span>
                   </div>
                 </div>
 
                 {/* Notes */}
-                <p className="text-xs text-slate-400 leading-relaxed">
+                <p className="text-xs text-slate-600 leading-relaxed">
                   {lobby.notes}
                 </p>
 
                 {/* Host and Capacity Progress */}
                 <div className="flex items-center justify-between text-xs pt-2">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-[10px] text-emerald-400 font-bold">
+                    <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-[10px] text-blue-700 font-extrabold">
                       {lobby.hostName.charAt(0)}
                     </div>
-                    <span className="text-slate-400 text-[11px]">
-                      Hosted by <strong className="text-slate-300">{lobby.hostName}</strong>
+                    <span className="text-slate-500 text-[11px]">
+                      Hosted by <strong className="text-slate-900">{lobby.hostName}</strong>
                     </span>
                   </div>
 
                   <div className="flex items-center gap-1.5 text-[11px]">
-                    <span className={`font-mono font-bold ${spotsLeft <= 2 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                    <span className={`font-mono font-bold ${spotsLeft <= 2 ? 'text-orange-600' : 'text-blue-700'}`}>
                       {lobby.currentPlayers}/{lobby.maxPlayers} Spots Filled
                     </span>
                   </div>
                 </div>
 
                 {/* Capacity Bar */}
-                <div className="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden">
+                <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
                   <div 
-                    className="bg-emerald-500 h-full rounded-full transition-all"
+                    className="bg-gradient-to-r from-blue-600 to-orange-500 h-full rounded-full transition-all"
                     style={{ width: `${(lobby.currentPlayers / lobby.maxPlayers) * 100}%` }}
                   />
                 </div>
@@ -248,8 +249,8 @@ export const Matchmaker: React.FC = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="pt-5 mt-4 border-t border-slate-800/80 flex items-center justify-between gap-3">
-                <div className="text-[11px] text-slate-500">
+              <div className="pt-5 mt-4 border-t border-slate-100 flex items-center justify-between gap-3">
+                <div className="text-[11px] text-slate-500 font-medium">
                   {spotsLeft > 0 ? `${spotsLeft} spots remaining` : 'Lobby is full'}
                 </div>
 
@@ -258,15 +259,15 @@ export const Matchmaker: React.FC = () => {
                   disabled={!lobby.isJoined && isFull}
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                     lobby.isJoined
-                      ? 'bg-slate-800 hover:bg-slate-700 text-rose-400 border border-rose-500/30'
+                      ? 'bg-slate-100 hover:bg-slate-200 text-rose-600 border border-rose-200'
                       : isFull
-                      ? 'bg-slate-900 text-slate-600 cursor-not-allowed'
-                      : 'bg-emerald-400 hover:bg-emerald-300 text-slate-950 shadow-md shadow-emerald-500/20'
+                      ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20'
                   }`}
                 >
                   {lobby.isJoined ? (
                     <>
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                       <span>Joined · Leave</span>
                     </>
                   ) : (
@@ -283,30 +284,32 @@ export const Matchmaker: React.FC = () => {
         })}
       </div>
 
-      {/* Host New Game Modal */}
+      {/* Host New Game Modal (Light Theme) */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div 
-            className="fixed inset-0 bg-slate-950/80 backdrop-blur-md" 
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" 
             onClick={() => setIsCreateModalOpen(false)} 
           />
 
-          <div className="relative w-full max-w-lg glass-modal rounded-2xl p-6 sm:p-8 text-slate-100 z-10 my-8 border border-slate-700">
+          <div className="relative w-full max-w-lg bg-white rounded-3xl p-6 sm:p-8 text-slate-900 z-10 my-8 border border-slate-200 shadow-2xl space-y-4">
             <button
               onClick={() => setIsCreateModalOpen(false)}
-              className="absolute top-5 right-5 p-2 rounded-lg text-slate-400 hover:text-white"
+              className="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <h3 className="text-xl font-bold text-white mb-1">Host a Game Lobby</h3>
-            <p className="text-xs text-slate-400 mb-5">
-              Publish a match invite for players in your Bengaluru neighborhood.
-            </p>
+            <div>
+              <h3 className="text-xl font-extrabold text-slate-900">Host a Game Lobby</h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Publish a match invite for players in your Bengaluru neighborhood.
+              </p>
+            </div>
 
             <form onSubmit={handleCreateLobby} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
                   Game Title *
                 </label>
                 <input
@@ -315,19 +318,19 @@ export const Matchmaker: React.FC = () => {
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   placeholder="e.g. 5v5 Football Turf Match"
-                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs focus:outline-none focus:border-emerald-500"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:border-blue-600"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
                     Sport
                   </label>
                   <select
                     value={newSport}
                     onChange={(e) => setNewSport(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs focus:outline-none focus:border-emerald-500"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-blue-600"
                   >
                     {SPORTS.filter(s => s.id !== 'all').map(s => (
                       <option key={s.id} value={s.id}>{s.name}</option>
@@ -336,13 +339,13 @@ export const Matchmaker: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
                     Locality
                   </label>
                   <select
                     value={newLocality}
                     onChange={(e) => setNewLocality(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs focus:outline-none focus:border-emerald-500"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-blue-600"
                   >
                     {LOCALITIES.filter(l => l !== 'All Localities').map(l => (
                       <option key={l} value={l}>{l}</option>
@@ -352,7 +355,7 @@ export const Matchmaker: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
                   Venue Name & Court *
                 </label>
                 <input
@@ -361,13 +364,13 @@ export const Matchmaker: React.FC = () => {
                   value={newVenueName}
                   onChange={(e) => setNewVenueName(e.target.value)}
                   placeholder="e.g. Apex Sky Turf (Court 2)"
-                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs focus:outline-none focus:border-emerald-500"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:border-blue-600"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
                     Date & Time *
                   </label>
                   <input
@@ -376,18 +379,18 @@ export const Matchmaker: React.FC = () => {
                     value={newDateTime}
                     onChange={(e) => setNewDateTime(e.target.value)}
                     placeholder="e.g. Tonight · 8:00 PM"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs focus:outline-none focus:border-emerald-500"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:border-blue-600"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
                     Skill Level
                   </label>
                   <select
                     value={newSkillLevel}
                     onChange={(e) => setNewSkillLevel(e.target.value as any)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs focus:outline-none focus:border-emerald-500"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-blue-600"
                   >
                     <option value="Casual / Beginner">Casual / Beginner</option>
                     <option value="Intermediate">Intermediate</option>
@@ -398,7 +401,7 @@ export const Matchmaker: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
                     Max Total Players
                   </label>
                   <input
@@ -407,12 +410,12 @@ export const Matchmaker: React.FC = () => {
                     max="30"
                     value={newMaxPlayers}
                     onChange={(e) => setNewMaxPlayers(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-mono font-bold"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
                     Share Per Person (₹)
                   </label>
                   <input
@@ -421,13 +424,13 @@ export const Matchmaker: React.FC = () => {
                     max="1000"
                     value={newSharePrice}
                     onChange={(e) => setNewSharePrice(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-mono font-bold"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
                   Notes for Joining Players
                 </label>
                 <textarea
@@ -435,13 +438,13 @@ export const Matchmaker: React.FC = () => {
                   value={newNotes}
                   onChange={(e) => setNewNotes(e.target.value)}
                   placeholder="e.g. Please bring extra shuttlecocks, turf shoes only, fun relaxed game."
-                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-blue-600"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold text-xs shadow-md transition-all mt-2 cursor-pointer"
+                className="w-full py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-md transition-all mt-2 cursor-pointer"
               >
                 Publish Lobby
               </button>

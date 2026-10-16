@@ -11,21 +11,49 @@ import {
   Clock, 
   Layers, 
   Calendar,
-  CheckCircle2
+  CheckCircle2,
+  Trophy,
+  GraduationCap,
+  CalendarCheck,
+  Compass,
+  CreditCard
 } from 'lucide-react';
-import { Venue, VENUES_DATA, SPORTS, LOCALITIES, COACHES_DATA, heroArenaImg, coachImg } from '../data/sportsData';
+import { 
+  Venue, 
+  VENUES_DATA, 
+  SPORTS, 
+  LOCALITIES, 
+  COACHES_DATA, 
+  Coach,
+  heroArenaImg, 
+  coachImg,
+  SPORT_FINDER_DATA
+} from '../data/sportsData';
 import { VenueCard } from '../components/VenueCard';
+import { CoachCard } from '../components/CoachCard';
+import { CoachTrialModal } from '../components/CoachTrialModal';
 
 interface HomeProps {
   onBookVenue: (venue: Venue) => void;
   onLocalityChange: (locality: string) => void;
+  appMode?: 'booking' | 'coaching';
+  onModeChange?: (mode: 'booking' | 'coaching') => void;
 }
 
-export const Home: React.FC<HomeProps> = ({ onBookVenue, onLocalityChange }) => {
+export const Home: React.FC<HomeProps> = ({ 
+  onBookVenue, 
+  onLocalityChange,
+  appMode = 'booking',
+  onModeChange
+}) => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSport, setSelectedSport] = useState('all');
   const [selectedLocality, setSelectedLocality] = useState('All Localities');
+
+  // Coaching trial modal state
+  const [activeTrialCoach, setActiveTrialCoach] = useState<Coach | null>(null);
+  const [isTrialOpen, setIsTrialOpen] = useState(false);
 
   // Hero Quick Sport Chips
   const quickSports = [
@@ -54,7 +82,12 @@ export const Home: React.FC<HomeProps> = ({ onBookVenue, onLocalityChange }) => 
     if (searchQuery) params.set('q', searchQuery);
     if (selectedSport !== 'all') params.set('sport', selectedSport);
     if (selectedLocality !== 'All Localities') params.set('locality', selectedLocality);
-    navigate(`/venues?${params.toString()}`);
+    
+    if (appMode === 'coaching') {
+      navigate(`/coaches?${params.toString()}`);
+    } else {
+      navigate(`/venues?${params.toString()}`);
+    }
   };
 
   const handleQuickLocalitySelect = (loc: string) => {
@@ -62,79 +95,128 @@ export const Home: React.FC<HomeProps> = ({ onBookVenue, onLocalityChange }) => 
     onLocalityChange(loc);
   };
 
-  // Filter featured venues
+  // Filter venues
   const featuredVenues = VENUES_DATA.filter((venue) => {
     const matchesLocality = selectedLocality === 'All Localities' || venue.locality === selectedLocality;
     const matchesSport = selectedSport === 'all' || venue.sports.includes(selectedSport);
     return matchesLocality && matchesSport;
   });
 
+  // Filter coaches
+  const featuredCoaches = COACHES_DATA.filter((coach) => {
+    const matchesLocality = selectedLocality === 'All Localities' || coach.locality === selectedLocality;
+    const matchesSport = selectedSport === 'all' || coach.sport === selectedSport;
+    return matchesLocality && matchesSport;
+  });
+
   return (
-    <div className="space-y-20 pb-16">
+    <div className="space-y-16 pb-16 bg-slate-50">
       
-      {/* Hero Section */}
-      <section className="relative pt-8 sm:pt-14 pb-12 overflow-hidden">
-        {/* Subtle glow background */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] bg-emerald-500/10 rounded-full blur-[140px] pointer-events-none" />
-        <div className="absolute top-1/3 right-10 w-[500px] h-[300px] bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
+      {/* Hero Section (Vibrant Light) */}
+      <section className="relative pt-8 sm:pt-12 pb-12 overflow-hidden border-b border-slate-200 bg-white">
+        
+        {/* Subtle decorative glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-blue-500/5 rounded-full blur-[140px] pointer-events-none" />
+        <div className="absolute top-1/3 right-10 w-[500px] h-[300px] bg-orange-500/5 rounded-full blur-[120px] pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           
+          {/* TOP-LEVEL MODE SEPARATION SWITCHER (Requirement 2) */}
+          <div className="mb-6 inline-flex p-1.5 rounded-2xl bg-slate-100 border border-slate-200/90 shadow-inner">
+            <button
+              onClick={() => onModeChange?.('booking')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer whitespace-nowrap ${
+                appMode === 'booking'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <CalendarCheck className="w-4 h-4" />
+              <span>Mode 1: Book a Court (Self-Play · No Trainer)</span>
+            </button>
+
+            <button
+              onClick={() => onModeChange?.('coaching')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer whitespace-nowrap ${
+                appMode === 'coaching'
+                  ? 'bg-orange-500 text-white shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <GraduationCap className="w-4 h-4" />
+              <span>Mode 2: Coaching & Training (Academy Batches)</span>
+            </button>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
             
             {/* Left Column: Headlines & Search */}
             <div className="lg:col-span-7 space-y-6 text-left">
               
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
-                <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Bengaluru&apos;s Dedicated Sports Booking Engine</span>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold">
+                <Sparkles className="w-3.5 h-3.5 text-orange-500" />
+                <span>Bengaluru&apos;s Sports Infrastructure & Training Platform</span>
               </div>
 
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.25rem] font-extrabold tracking-tight text-white leading-[1.15]" style={{ textWrap: 'balance' }}>
-                Find & Book Premium Sports Courts Across <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">Bengaluru</span>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 leading-[1.15]" style={{ textWrap: 'balance' }}>
+                {appMode === 'booking' ? (
+                  <>
+                    Find & Book Premium Courts Across <span className="text-blue-600">Bengaluru</span>
+                  </>
+                ) : (
+                  <>
+                    Train with Certified NIS & BWF Coaches in <span className="text-orange-500">Bengaluru</span>
+                  </>
+                )}
               </h1>
 
-              <p className="text-base sm:text-lg text-slate-300 font-normal leading-relaxed max-w-xl">
-                Real-time slot availability, verified BWF synthetic mats & FIFA-certified turfs. Zero surge fees, instant slot lock, and active player match lobbies.
+              <p className="text-base sm:text-lg text-slate-600 font-normal leading-relaxed max-w-xl">
+                {appMode === 'booking' 
+                  ? "Real-time court slot booking. Verified BWF synthetic mats, FIFA rooftop turfs, zero surge fees, and instant slot locks across 9 neighborhoods."
+                  : "Structured monthly training programs, certified NIS/BWF mentors, beginner evaluations, and junior/adult batches across Bengaluru."}
               </p>
 
               {/* Main Search Bar Form */}
               <form 
                 onSubmit={handleSearchSubmit}
-                className="p-2 sm:p-2.5 rounded-2xl glass-modal border border-slate-700/80 shadow-2xl flex flex-col sm:flex-row gap-2"
+                className="p-2 sm:p-2.5 rounded-2xl bg-white border border-slate-300 shadow-md flex flex-col sm:flex-row gap-2"
               >
-                <div className="flex-1 flex items-center gap-2.5 px-3 py-2 bg-slate-900/80 rounded-xl border border-slate-800">
-                  <Search className="w-4 h-4 text-emerald-400 shrink-0" />
+                <div className="flex-1 flex items-center gap-2.5 px-3 py-2 bg-slate-50 rounded-xl border border-slate-200">
+                  <Search className="w-4 h-4 text-blue-600 shrink-0" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search venue name, sport, or landmark..."
-                    className="w-full bg-transparent text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none"
+                    placeholder={appMode === 'booking' ? "Search court name, turf, or locality (e.g. Indiranagar, BWF)..." : "Search coach name, academy, or sport (e.g. badminton, tennis)..."}
+                    className="w-full bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none font-medium"
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-bold text-sm shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 cursor-pointer transition-all hover:scale-[1.02] shrink-0"
+                  className={`px-6 py-3 rounded-xl font-bold text-sm shadow-md text-white flex items-center justify-center gap-2 cursor-pointer transition-all hover:scale-[1.02] shrink-0 ${
+                    appMode === 'booking'
+                      ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20'
+                      : 'bg-orange-500 hover:bg-orange-600 shadow-orange-500/20'
+                  }`}
                 >
-                  <span>Explore Courts</span>
-                  <ArrowRight className="w-4 h-4 text-slate-950" />
+                  <span>{appMode === 'booking' ? 'Explore Courts' : 'Find Coaches'}</span>
+                  <ArrowRight className="w-4 h-4 text-white" />
                 </button>
               </form>
 
               {/* Quick Sport Chips */}
               <div className="space-y-2 pt-1">
-                <span className="text-xs font-semibold text-slate-400 tracking-wider uppercase block">
+                <span className="text-xs font-bold text-slate-500 tracking-wider uppercase block">
                   Quick Sport Filters:
                 </span>
                 <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => setSelectedSport('all')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       selectedSport === 'all'
-                        ? 'bg-emerald-500 text-slate-950 font-bold shadow-sm'
-                        : 'bg-slate-900/80 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700'
+                        ? 'bg-slate-900 text-white shadow-xs'
+                        : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200 hover:bg-slate-50'
                     }`}
                   >
                     All
@@ -143,10 +225,10 @@ export const Home: React.FC<HomeProps> = ({ onBookVenue, onLocalityChange }) => 
                     <button
                       key={sport.id}
                       onClick={() => setSelectedSport(sport.id === selectedSport ? 'all' : sport.id)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                         selectedSport === sport.id
-                          ? 'bg-emerald-500 text-slate-950 font-bold shadow-sm'
-                          : 'bg-slate-900/80 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700'
+                          ? 'bg-blue-600 text-white shadow-xs'
+                          : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200 hover:bg-slate-50'
                       }`}
                     >
                       {sport.name}
@@ -157,27 +239,31 @@ export const Home: React.FC<HomeProps> = ({ onBookVenue, onLocalityChange }) => 
 
             </div>
 
-            {/* Right Column: Hero Visual Asset (Cinematic Arena) */}
+            {/* Right Column: Hero Visual Asset */}
             <div className="lg:col-span-5 relative">
-              <div className="relative rounded-3xl overflow-hidden glass-card p-2 border border-slate-700/60 shadow-2xl group">
+              <div className="relative rounded-3xl overflow-hidden bg-white p-2 border border-slate-200 shadow-xl group">
                 <div className="relative aspect-[4/3] rounded-2xl overflow-hidden">
                   <img
-                    src={heroArenaImg}
-                    alt="Premier sports arena complex in Bengaluru"
+                    src={appMode === 'booking' ? heroArenaImg : coachImg}
+                    alt={appMode === 'booking' ? "Premier sports arena complex in Bengaluru" : "Professional sports coach in Bengaluru"}
                     referrerPolicy="no-referrer"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-black/10" />
                   
                   {/* Floating Live Badge */}
-                  <div className="absolute bottom-4 left-4 right-4 p-3.5 rounded-xl glass-modal border border-slate-700/80 text-left">
+                  <div className="absolute bottom-4 left-4 right-4 p-4 rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200 text-left shadow-lg">
                     <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="font-bold text-white">Velocity Sports Arena</span>
-                      <span className="text-emerald-400 font-mono font-bold">From ₹450/hr</span>
+                      <span className="font-extrabold text-slate-900">
+                        {appMode === 'booking' ? 'Velocity Sports Arena' : 'Prakash Padukone Elite Affiliate'}
+                      </span>
+                      <span className={`font-mono font-extrabold ${appMode === 'booking' ? 'text-blue-700' : 'text-orange-600'}`}>
+                        {appMode === 'booking' ? 'From ₹450/hr' : '₹3,200/mo'}
+                      </span>
                     </div>
-                    <div className="text-[11px] text-slate-400 flex items-center gap-2">
-                      <MapPin className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Yelahanka · 8 BWF Synthetic Courts</span>
+                    <div className="text-[11px] text-slate-600 flex items-center gap-2 font-medium">
+                      <MapPin className="w-3.5 h-3.5 text-orange-500" />
+                      <span>{appMode === 'booking' ? 'Yelahanka · 8 BWF Synthetic Courts' : 'Sahakar Nagar · BWF Level 2 Head Coach'}</span>
                     </div>
                   </div>
                 </div>
@@ -186,23 +272,76 @@ export const Home: React.FC<HomeProps> = ({ onBookVenue, onLocalityChange }) => 
 
           </div>
 
+          {/* Quick Shortcuts: "Find Your Sport" and "4-Week Plan" Callout Cards */}
+          <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            {/* Shortcut 1: Find Your Sport Finder Grid */}
+            <Link
+              to="/finder"
+              className="p-5 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50/60 border border-blue-200 hover:border-blue-400 transition-all shadow-xs hover:shadow-md flex items-center justify-between group"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
+                  <Compass className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-extrabold text-slate-900 group-hover:text-blue-600 transition-colors">
+                      Find Your Sport
+                    </h3>
+                    <span className="text-[10px] font-bold bg-blue-600 text-white px-2 py-0.5 rounded-full">New</span>
+                  </div>
+                  <p className="text-xs text-slate-600 mt-0.5">
+                    Ranked sports by budget, learning curve & fitness confidence.
+                  </p>
+                </div>
+              </div>
+              <ArrowRight className="w-5 h-5 text-blue-600 group-hover:translate-x-1 transition-transform shrink-0" />
+            </Link>
+
+            {/* Shortcut 2: 4-Week Starter Plan */}
+            <Link
+              to="/plan"
+              className="p-5 rounded-2xl bg-gradient-to-r from-orange-50 to-amber-50/60 border border-orange-200 hover:border-orange-400 transition-all shadow-xs hover:shadow-md flex items-center justify-between group"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-orange-500 text-white flex items-center justify-center shadow-md shadow-orange-500/20 group-hover:scale-105 transition-transform">
+                  <Trophy className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-extrabold text-slate-900 group-hover:text-orange-600 transition-colors">
+                      4-Week Starter Plan
+                    </h3>
+                    <span className="text-[10px] font-bold bg-orange-500 text-white px-2 py-0.5 rounded-full">Step-by-Step</span>
+                  </div>
+                  <p className="text-xs text-slate-600 mt-0.5">
+                    Interactive weekly roadmap & equipment checklist for beginners.
+                  </p>
+                </div>
+              </div>
+              <ArrowRight className="w-5 h-5 text-orange-600 group-hover:translate-x-1 transition-transform shrink-0" />
+            </Link>
+
+          </div>
+
           {/* KPI / Proof Strip */}
-          <div className="mt-14 grid grid-cols-2 md:grid-cols-4 gap-4 p-5 rounded-2xl glass-card border border-slate-800/80 text-left">
+          <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4 p-5 rounded-2xl bg-white border border-slate-200 shadow-xs text-left">
             <div className="space-y-1">
-              <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono tabular-nums">64+</div>
-              <div className="text-xs text-slate-400 font-medium">Verified BLR Venues</div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-mono tabular-nums">64+</div>
+              <div className="text-xs text-slate-500 font-semibold">Verified BLR Venues</div>
             </div>
             <div className="space-y-1">
-              <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400 font-mono tabular-nums">18,500+</div>
-              <div className="text-xs text-slate-400 font-medium">Hours Booked</div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-blue-600 font-mono tabular-nums">18,500+</div>
+              <div className="text-xs text-slate-500 font-semibold">Hours Booked</div>
             </div>
             <div className="space-y-1">
-              <div className="text-2xl sm:text-3xl font-extrabold text-cyan-400 font-mono tabular-nums">4.9 ★</div>
-              <div className="text-xs text-slate-400 font-medium">Player Review Average</div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-orange-500 font-mono tabular-nums">4.9 ★</div>
+              <div className="text-xs text-slate-500 font-semibold">Player Review Average</div>
             </div>
             <div className="space-y-1">
-              <div className="text-2xl sm:text-3xl font-extrabold text-teal-300 font-mono tabular-nums">0%</div>
-              <div className="text-xs text-slate-400 font-medium">Surge or Convenience Fees</div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-indigo-600 font-mono tabular-nums">0%</div>
+              <div className="text-xs text-slate-500 font-semibold">Surge or Booking Fees</div>
             </div>
           </div>
 
@@ -213,20 +352,20 @@ export const Home: React.FC<HomeProps> = ({ onBookVenue, onLocalityChange }) => 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
           <div>
-            <div className="text-xs text-emerald-400 font-semibold tracking-wider uppercase mb-1">
+            <div className="text-xs text-orange-600 font-bold tracking-wider uppercase mb-1">
               Bengaluru Neighborhood Hubs
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
               Locality Quick-Picks
             </h2>
-            <p className="text-xs sm:text-sm text-slate-400 mt-1">
-              Select your area to find courts within 5-15 minutes of your location.
+            <p className="text-xs sm:text-sm text-slate-500 mt-1 font-medium">
+              Select your neighborhood to find courts within 5-15 minutes of your location.
             </p>
           </div>
 
           <Link
-            to="/venues"
-            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-emerald-400 hover:text-emerald-300 transition-colors"
+            to={appMode === 'booking' ? '/venues' : '/coaches'}
+            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors"
           >
             <span>View all 9 localities</span>
             <ArrowRight className="w-4 h-4" />
@@ -239,191 +378,113 @@ export const Home: React.FC<HomeProps> = ({ onBookVenue, onLocalityChange }) => 
             <button
               key={loc}
               onClick={() => handleQuickLocalitySelect(loc)}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 shadow-2xs ${
                 selectedLocality === loc
-                  ? 'bg-emerald-500 text-slate-950 font-bold shadow-lg shadow-emerald-500/20'
-                  : 'glass-card text-slate-300 hover:text-white hover:border-slate-700'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'bg-white text-slate-700 hover:text-slate-900 border border-slate-200 hover:bg-slate-50'
               }`}
             >
-              <MapPin className="w-3.5 h-3.5" />
+              <MapPin className="w-3.5 h-3.5 text-orange-500" />
               <span>{loc}</span>
             </button>
           ))}
         </div>
       </section>
 
-      {/* Featured Venues Grid */}
+      {/* Featured Section: Toggles depending on active mode (Court Booking vs Coaching) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
           <div>
-            <div className="text-xs text-emerald-400 font-semibold tracking-wider uppercase mb-1">
-              Verified Arenas & Pitches
+            <div className={`text-xs font-bold tracking-wider uppercase mb-1 ${appMode === 'booking' ? 'text-blue-600' : 'text-orange-600'}`}>
+              {appMode === 'booking' ? '⚡ Hourly Slot Rentals (Self-Play · No Trainer)' : '🎓 Academy Batches & Certified Mentors'}
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Featured Venues in Bengaluru
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              {appMode === 'booking' ? 'Verified Courts in Bengaluru' : 'Top Coaches & Academies in Bengaluru'}
             </h2>
-            <p className="text-xs sm:text-sm text-slate-400 mt-1">
-              Showing {featuredVenues.length} top-rated venues matching your preferences.
+            <p className="text-xs sm:text-sm text-slate-500 mt-1 font-medium">
+              Showing {appMode === 'booking' ? featuredVenues.length : featuredCoaches.length} verified listings matching your area.
             </p>
           </div>
 
           <Link
-            to="/venues"
-            className="px-4 py-2 rounded-xl glass-card text-xs sm:text-sm font-semibold text-slate-200 hover:text-emerald-400 hover:border-emerald-500/40 transition-colors"
+            to={appMode === 'booking' ? '/venues' : '/coaches'}
+            className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-xs sm:text-sm font-bold text-slate-800 hover:text-blue-600 hover:border-blue-400 transition-colors shadow-2xs"
           >
-            Open Full Venue Directory →
+            {appMode === 'booking' ? 'Open Court Directory →' : 'Open Academy Directory →'}
           </Link>
         </div>
 
-        {featuredVenues.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredVenues.map((venue) => (
-              <VenueCard
-                key={venue.id}
-                venue={venue}
-                onBook={onBookVenue}
-                onSelectLocality={handleQuickLocalitySelect}
-              />
-            ))}
-          </div>
+        {appMode === 'booking' ? (
+          featuredVenues.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {featuredVenues.map((venue) => (
+                <VenueCard
+                  key={venue.id}
+                  venue={venue}
+                  onBook={onBookVenue}
+                  onSelectLocality={handleQuickLocalitySelect}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="p-12 text-center rounded-2xl bg-white border border-slate-200 shadow-sm">
+              <Layers className="w-10 h-10 text-slate-400 mx-auto mb-3" />
+              <h3 className="text-base font-bold text-slate-900">No courts found matching this filter</h3>
+              <p className="text-xs text-slate-500 mt-1 mb-4">Try selecting &apos;All Localities&apos; or reset your sport selection.</p>
+              <button
+                onClick={() => {
+                  setSelectedLocality('All Localities');
+                  setSelectedSport('all');
+                }}
+                className="px-4 py-2 text-xs font-bold rounded-xl bg-blue-600 text-white"
+              >
+                Reset Filters
+              </button>
+            </div>
+          )
         ) : (
-          <div className="p-12 text-center rounded-2xl glass-card border border-slate-800">
-            <Layers className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-            <h3 className="text-base font-semibold text-white">No courts found matching this filter</h3>
-            <p className="text-xs text-slate-400 mt-1 mb-4">Try selecting &apos;All Localities&apos; or reset your sport selection.</p>
-            <button
-              onClick={() => {
-                setSelectedLocality('All Localities');
-                setSelectedSport('all');
-              }}
-              className="px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-400 text-slate-950"
-            >
-              Reset Filters
-            </button>
-          </div>
+          featuredCoaches.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {featuredCoaches.map((coach) => (
+                <CoachCard
+                  key={coach.id}
+                  coach={coach}
+                  onBookTrial={(c) => {
+                    setActiveTrialCoach(c);
+                    setIsTrialOpen(true);
+                  }}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="p-12 text-center rounded-2xl bg-white border border-slate-200 shadow-sm">
+              <GraduationCap className="w-10 h-10 text-slate-400 mx-auto mb-3" />
+              <h3 className="text-base font-bold text-slate-900">No coaches found matching this filter</h3>
+              <p className="text-xs text-slate-500 mt-1 mb-4">Try resetting filters to explore all Bengaluru coaching batches.</p>
+              <button
+                onClick={() => {
+                  setSelectedLocality('All Localities');
+                  setSelectedSport('all');
+                }}
+                className="px-4 py-2 text-xs font-bold rounded-xl bg-orange-500 text-white"
+              >
+                Reset Filters
+              </button>
+            </div>
+          )
         )}
       </section>
 
-      {/* Academies & Coaching Highlight Teaser */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="rounded-3xl glass-card border border-slate-800 p-8 sm:p-12 relative overflow-hidden">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            
-            <div className="lg:col-span-7 space-y-4">
-              <div className="inline-flex items-center gap-1.5 text-xs text-emerald-400 font-semibold tracking-wider uppercase">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span>Accredited Sports Academies</span>
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                Level Up with Certified NIS & BWF Coaches
-              </h2>
-              <p className="text-sm text-slate-300 leading-relaxed">
-                Whether you are starting from scratch or training for tournament play, our verified Bengaluru coaches offer structured batches for juniors (under 14) and adults. Complimentary stroke assessment included.
-              </p>
-              <div className="flex flex-wrap gap-4 pt-2">
-                <Link
-                  to="/coaches"
-                  className="px-5 py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold text-xs sm:text-sm shadow-md transition-all inline-flex items-center gap-2"
-                >
-                  <span>Explore Academies & Batches</span>
-                  <ArrowRight className="w-4 h-4 text-slate-950" />
-                </Link>
-                <Link
-                  to="/estimator"
-                  className="px-5 py-2.5 rounded-xl glass-panel text-slate-200 hover:text-white font-semibold text-xs sm:text-sm border border-slate-700 transition-all inline-flex items-center gap-2"
-                >
-                  <span>Calculate Monthly Coaching Cost</span>
-                </Link>
-              </div>
-            </div>
-
-            <div className="lg:col-span-5">
-              <div className="relative rounded-2xl overflow-hidden aspect-[4/3] border border-slate-700/80 shadow-xl">
-                <img
-                  src={coachImg}
-                  alt="Certified badminton coach mentoring junior players"
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
-                <div className="absolute bottom-3 left-3 right-3 text-xs text-slate-300">
-                  <div className="font-bold text-white">Coach Manjunath Gowda</div>
-                  <div className="text-[11px] text-emerald-400">NIS & BWF Level 2 · Sahakar Nagar</div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* Community Matchmaker Teaser */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <div className="text-xs text-emerald-400 font-semibold tracking-wider uppercase mb-1">
-              Player Community Lobbies
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Looking for a Game Tonight?
-            </h2>
-          </div>
-          <Link
-            to="/matchmaker"
-            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-emerald-400 hover:text-emerald-300"
-          >
-            <span>Open Matchmaker Hub</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="p-5 rounded-2xl glass-card border border-slate-800 space-y-3">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-emerald-400 font-semibold">Football 5v5</span>
-              <span className="text-slate-400">Tonight · 8:30 PM</span>
-            </div>
-            <h3 className="font-bold text-white text-sm">Apex Sky Turf (Indiranagar)</h3>
-            <p className="text-xs text-slate-400">2 slots open for midfielders. Bibs and ball provided.</p>
-            <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs">
-              <span className="text-slate-300 font-mono">₹120 / person</span>
-              <Link to="/matchmaker" className="text-emerald-400 font-semibold hover:underline">
-                Join Match →
-              </Link>
-            </div>
-          </div>
-
-          <div className="p-5 rounded-2xl glass-card border border-slate-800 space-y-3">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-teal-400 font-semibold">Badminton Doubles</span>
-              <span className="text-slate-400">Tomorrow · 7:00 AM</span>
-            </div>
-            <h3 className="font-bold text-white text-sm">Velocity Arena (Sahakar Nagar)</h3>
-            <p className="text-xs text-slate-400">Looking for 1 intermediate partner for fast rally games.</p>
-            <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs">
-              <span className="text-slate-300 font-mono">₹160 / person</span>
-              <Link to="/matchmaker" className="text-emerald-400 font-semibold hover:underline">
-                Join Match →
-              </Link>
-            </div>
-          </div>
-
-          <div className="p-5 rounded-2xl glass-card border border-slate-800 space-y-3">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-cyan-400 font-semibold">Pickleball Mixer</span>
-              <span className="text-slate-400">Saturday · 7:30 AM</span>
-            </div>
-            <h3 className="font-bold text-white text-sm">Pulse Hub (HSR Layout)</h3>
-            <p className="text-xs text-slate-400">Friendly round-robin doubles. Beginners welcome.</p>
-            <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs">
-              <span className="text-slate-300 font-mono">₹180 / person</span>
-              <Link to="/matchmaker" className="text-emerald-400 font-semibold hover:underline">
-                Join Match →
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Trial Session Modal */}
+      <CoachTrialModal
+        coach={activeTrialCoach}
+        isOpen={isTrialOpen}
+        onClose={() => {
+          setIsTrialOpen(false);
+          setActiveTrialCoach(null);
+        }}
+      />
 
     </div>
   );

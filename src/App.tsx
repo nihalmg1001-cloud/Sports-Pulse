@@ -9,10 +9,13 @@ import { FindVenues } from './pages/FindVenues';
 import { Coaches } from './pages/Coaches';
 import { Matchmaker } from './pages/Matchmaker';
 import { CostEstimator } from './pages/CostEstimator';
+import { SportFinder } from './pages/SportFinder';
+import { StarterPlan } from './pages/StarterPlan';
 import { Venue, VENUES_DATA } from './data/sportsData';
 
 export default function App() {
   const [currentLocality, setCurrentLocality] = useState<string>('All Localities');
+  const [appMode, setAppMode] = useState<'booking' | 'coaching'>('booking');
   const [bookingVenue, setBookingVenue] = useState<Venue | null>(null);
   const [isBookingOpen, setIsBookingOpen] = useState<boolean>(false);
 
@@ -27,13 +30,15 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500/30 selection:text-emerald-300">
+      <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-blue-600/20 selection:text-blue-700">
         
-        {/* Modern Glassmorphic Top Navbar */}
+        {/* Modern Navbar with Top-Level Mode Switcher */}
         <Navbar
           currentLocality={currentLocality}
           onLocalityChange={setCurrentLocality}
           onOpenQuickBook={() => handleOpenBooking()}
+          appMode={appMode}
+          onModeChange={setAppMode}
         />
 
         {/* Page Content Routing */}
@@ -45,6 +50,8 @@ export default function App() {
                 <Home
                   onBookVenue={handleOpenBooking}
                   onLocalityChange={setCurrentLocality}
+                  appMode={appMode}
+                  onModeChange={setAppMode}
                 />
               }
             />
@@ -62,6 +69,24 @@ export default function App() {
               path="/coaches"
               element={<Coaches />}
             />
+            {/* Find Your Sport Grid (Requirement 3) */}
+            <Route
+              path="/finder"
+              element={<SportFinder />}
+            />
+            <Route
+              path="/find-your-sport"
+              element={<SportFinder />}
+            />
+            {/* 4-Week Starter Plan (Requirement 4) */}
+            <Route
+              path="/plan"
+              element={<StarterPlan />}
+            />
+            <Route
+              path="/my-journey"
+              element={<StarterPlan />}
+            />
             <Route
               path="/matchmaker"
               element={<Matchmaker />}
@@ -77,6 +102,8 @@ export default function App() {
                 <Home
                   onBookVenue={handleOpenBooking}
                   onLocalityChange={setCurrentLocality}
+                  appMode={appMode}
+                  onModeChange={setAppMode}
                 />
               }
             />

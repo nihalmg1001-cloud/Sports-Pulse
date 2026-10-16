@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   Award, 
   MapPin, 
@@ -9,7 +10,8 @@ import {
   Calendar, 
   Check, 
   RotateCcw,
-  BookOpen
+  BookOpen,
+  GraduationCap
 } from 'lucide-react';
 import { Coach, COACHES_DATA, SPORTS, LOCALITIES } from '../data/sportsData';
 import { CoachCard } from '../components/CoachCard';
@@ -68,48 +70,72 @@ export const Coaches: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       
+      {/* MODE BANNER: COACHING & TRAINING (Requirement 2) */}
+      <div className="p-4 rounded-2xl bg-orange-50 border border-orange-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-orange-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+            <GraduationCap className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-xs font-extrabold text-orange-950 uppercase tracking-wider flex items-center gap-1.5">
+              <span>Mode 2: Coaching & Training Academies</span>
+            </div>
+            <div className="text-xs text-orange-800">
+              Enrolling in structured training programs and hiring certified mentors. Looking to casually book an empty court instead?
+            </div>
+          </div>
+        </div>
+
+        <Link
+          to="/venues"
+          className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-blue-50 text-blue-600 hover:text-blue-700 text-xs font-bold border border-blue-200 transition-colors shadow-2xs whitespace-nowrap self-start sm:self-auto"
+        >
+          Switch to Court Slot Booking →
+        </Link>
+      </div>
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <div className="text-xs text-emerald-400 font-semibold tracking-wider uppercase mb-1 flex items-center gap-1.5">
-            <Award className="w-3.5 h-3.5" />
+          <div className="text-xs text-orange-600 font-bold tracking-wider uppercase mb-1 flex items-center gap-1.5">
+            <Award className="w-3.5 h-3.5 text-orange-500" />
             <span>Bengaluru Coaching Guild</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
             Academies & Certified Coaches
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Learn from state champions, NIS diploma holders, and BWF/ITF certified instructors with structured monthly programs.
+          <p className="text-xs sm:text-sm text-slate-600 mt-1">
+            Learn from state champions, NIS diploma holders, and BWF/ITF certified instructors with monthly fee breakdowns and trial evaluations.
           </p>
         </div>
 
         <button
           onClick={handleResetFilters}
-          className="self-start md:self-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white glass-card transition-colors cursor-pointer"
+          className="self-start md:self-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-100 transition-colors cursor-pointer shadow-2xs"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           <span>Reset Filters</span>
         </button>
       </div>
 
-      {/* Filter Matrix Card */}
-      <div className="glass-panel rounded-2xl p-5 sm:p-6 border border-slate-800 space-y-5">
+      {/* Filter Matrix Card (Light Theme) */}
+      <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200 shadow-sm space-y-5">
         
         {/* Search */}
-        <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-slate-900 rounded-xl border border-slate-700/60">
-          <Search className="w-4 h-4 text-emerald-400 shrink-0" />
+        <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-slate-50 rounded-xl border border-slate-200">
+          <Search className="w-4 h-4 text-orange-500 shrink-0" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search coach name, academy, or specialty (e.g., footwork, biomechanics, junior)..."
-            className="w-full bg-transparent text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none"
+            className="w-full bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none font-medium"
           />
         </div>
 
         {/* Sport selection */}
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-2">
+          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
             Sport Discipline
           </label>
           <div className="flex flex-wrap gap-2">
@@ -117,10 +143,10 @@ export const Coaches: React.FC = () => {
               <button
                 key={sport.id}
                 onClick={() => setSelectedSport(sport.id)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   selectedSport === sport.id
-                    ? 'bg-emerald-500 text-slate-950 font-bold shadow-md shadow-emerald-500/20'
-                    : 'bg-slate-900/80 text-slate-300 hover:text-white border border-slate-800'
+                    ? 'bg-orange-500 text-white shadow-sm'
+                    : 'bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:bg-slate-100'
                 }`}
               >
                 {sport.name}
@@ -130,22 +156,22 @@ export const Coaches: React.FC = () => {
         </div>
 
         {/* Age Group & Level Filters */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-slate-800/80">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-3 border-t border-slate-100">
           
           {/* Age Group */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
               Target Age Group
             </label>
-            <div className="flex rounded-lg bg-slate-900 p-1 border border-slate-800">
+            <div className="flex rounded-xl bg-slate-100 p-1 border border-slate-200">
               {['all', 'Junior', 'Adult'].map((age) => (
                 <button
                   key={age}
                   onClick={() => setSelectedAgeGroup(age)}
-                  className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
                     selectedAgeGroup === age
-                      ? 'bg-emerald-500 text-slate-950 font-bold'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-orange-500 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   {age === 'all' ? 'All Ages' : age}
@@ -156,18 +182,18 @@ export const Coaches: React.FC = () => {
 
           {/* Experience / Skill Level */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
               Player Skill Level
             </label>
-            <div className="flex rounded-lg bg-slate-900 p-1 border border-slate-800">
+            <div className="flex rounded-xl bg-slate-100 p-1 border border-slate-200">
               {['all', 'Beginner', 'Advanced'].map((lvl) => (
                 <button
                   key={lvl}
                   onClick={() => setSelectedLevel(lvl)}
-                  className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
                     selectedLevel === lvl
-                      ? 'bg-cyan-500 text-slate-950 font-bold'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   {lvl === 'all' ? 'All Levels' : lvl}
@@ -178,13 +204,13 @@ export const Coaches: React.FC = () => {
 
           {/* Locality */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
               Bengaluru Locality
             </label>
             <select
               value={selectedLocality}
               onChange={(e) => setSelectedLocality(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs focus:outline-none focus:border-emerald-500"
+              className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-orange-500 cursor-pointer"
             >
               {LOCALITIES.map((loc) => (
                 <option key={loc} value={loc}>
@@ -200,8 +226,8 @@ export const Coaches: React.FC = () => {
 
       {/* Grid of Coaches */}
       <div className="space-y-4">
-        <div className="text-xs text-slate-400">
-          Showing <span className="font-bold text-white font-mono">{filteredCoaches.length}</span> accredited coaching programs in Bengaluru
+        <div className="text-xs font-semibold text-slate-600">
+          Showing <span className="font-extrabold text-slate-900 font-mono">{filteredCoaches.length}</span> accredited coaching programs in Bengaluru
         </div>
 
         {filteredCoaches.length > 0 ? (
@@ -215,15 +241,15 @@ export const Coaches: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="p-14 text-center rounded-2xl glass-card border border-slate-800">
-            <BookOpen className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-            <h3 className="text-base font-bold text-white">No Coaches Match Current Filters</h3>
-            <p className="text-xs text-slate-400 mt-1 mb-4">
+          <div className="p-14 text-center rounded-3xl bg-white border border-slate-200 shadow-sm">
+            <BookOpen className="w-10 h-10 text-slate-400 mx-auto mb-3" />
+            <h3 className="text-base font-extrabold text-slate-900">No Coaches Match Current Filters</h3>
+            <p className="text-xs text-slate-500 mt-1 mb-4">
               Try choosing &apos;All Ages&apos; or changing your locality to explore options across Bengaluru.
             </p>
             <button
               onClick={handleResetFilters}
-              className="px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-400 text-slate-950"
+              className="px-4 py-2 text-xs font-bold rounded-xl bg-orange-500 text-white shadow-sm"
             >
               Reset Filters
             </button>
