@@ -156,10 +156,10 @@ export const AiConcierge: React.FC<AiConciergeProps> = ({
         }
       ];
 
-      // Call Gemini 1.5 Flash strictly with temperature: 0.7 and maxOutputTokens: 300
+      // Call Gemini 3.5 Flash with temperature: 0.7 and maxOutputTokens: 300
       const generateModelResponse = () =>
         ai.models.generateContent({
-          model: 'gemini-1.5-flash',
+          model: 'gemini-3.5-flash',
           contents,
           config: {
             systemInstruction: SYSTEM_INSTRUCTION,
@@ -184,7 +184,7 @@ export const AiConcierge: React.FC<AiConciergeProps> = ({
           }
         });
 
-      // Silent auto-retry loop for 503 capacity errors (retries in background)
+      // Silent auto-retry loop for temporary network hiccups & 503 capacity errors (retries in background without showing error banners)
       let response: any = null;
       const MAX_RETRIES = 2;
       let attempt = 0;
@@ -194,15 +194,22 @@ export const AiConcierge: React.FC<AiConciergeProps> = ({
           response = await generateModelResponse();
           break;
         } catch (callErr: any) {
-          if (is503CapacityError(callErr) && attempt < MAX_RETRIES) {
+          const isTransientError =
+            is503CapacityError(callErr) ||
+            callErr?.name === 'TypeError' ||
+            String(callErr?.message || '').toLowerCase().includes('failed to fetch') ||
+            String(callErr?.message || '').toLowerCase().includes('network') ||
+            String(callErr?.message || '').toLowerCase().includes('timeout');
+
+          if (isTransientError && attempt < MAX_RETRIES) {
             attempt++;
             const backoffMs = attempt * 1000;
-            console.warn(`[Sports Pulse AI] 503 capacity detected (attempt ${attempt}/${MAX_RETRIES}). Retrying silently in ${backoffMs}ms...`);
+            console.warn(`[Sports Pulse AI] Temporary network hiccup / capacity error detected (attempt ${attempt}/${MAX_RETRIES}). Retrying silently in ${backoffMs}ms...`);
             await new Promise((resolve) => setTimeout(resolve, backoffMs));
             continue;
           }
 
-          // Log and propagate error to main error-handling block
+          // Propagate error to main error-handling block
           throw callErr;
         }
       }
