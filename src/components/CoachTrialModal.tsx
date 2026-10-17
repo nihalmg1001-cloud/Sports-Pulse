@@ -19,21 +19,36 @@ interface CoachTrialModalProps {
   coach: Coach | null;
   isOpen: boolean;
   onClose: () => void;
+  initialPlayerName?: string;
+  initialSkillLevel?: SkillLevel;
+  initialQuizScore?: number | null;
 }
 
 export const CoachTrialModal: React.FC<CoachTrialModalProps> = ({
   coach,
   isOpen,
-  onClose
+  onClose,
+  initialPlayerName = '',
+  initialSkillLevel = 'Beginner',
+  initialQuizScore = null
 }) => {
-  const [playerName, setPlayerName] = useState('');
+  const [playerName, setPlayerName] = useState(initialPlayerName);
   const [playerAgeGroup, setPlayerAgeGroup] = useState<string>('Junior (Under 14)');
-  const [skillLevel, setSkillLevel] = useState<SkillLevel>('Beginner');
+  const [skillLevel, setSkillLevel] = useState<SkillLevel>(initialSkillLevel);
   const [contactPhone, setContactPhone] = useState('');
   const [preferredSlot, setPreferredSlot] = useState('Weekend Morning Batch (07:00 AM)');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isQuizOpen, setIsQuizOpen] = useState(false);
-  const [quizScore, setQuizScore] = useState<number | null>(null);
+  const [quizScore, setQuizScore] = useState<number | null>(initialQuizScore);
+
+  // Sync initial values when modal opens
+  React.useEffect(() => {
+    if (isOpen) {
+      if (initialPlayerName) setPlayerName(initialPlayerName);
+      if (initialSkillLevel) setSkillLevel(initialSkillLevel);
+      if (initialQuizScore !== undefined) setQuizScore(initialQuizScore);
+    }
+  }, [isOpen, initialPlayerName, initialSkillLevel, initialQuizScore]);
 
   if (!isOpen || !coach) return null;
 

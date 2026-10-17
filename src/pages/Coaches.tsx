@@ -16,9 +16,11 @@ import {
 import { Coach, COACHES_DATA, SPORTS, LOCALITIES } from '../data/sportsData';
 import { CoachCard } from '../components/CoachCard';
 import { CoachTrialModal } from '../components/CoachTrialModal';
-import { SkillQuizModal, SkillLevel } from '../components/SkillQuizModal';
+import { SkillQuiz, SkillQuizModal, SkillLevel } from '../components/SkillQuiz';
+import { CoachingSection } from '../components/CoachingSection';
 
 export const Coaches: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'match' | 'browse'>('match');
   const [selectedSport, setSelectedSport] = useState<string>('all');
   const [selectedAgeGroup, setSelectedAgeGroup] = useState<string>('all');
   const [selectedLevel, setSelectedLevel] = useState<string>('all');
@@ -115,26 +117,52 @@ export const Coaches: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2 self-start md:self-auto">
-          <button
-            onClick={() => setIsQuizModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold text-white bg-orange-500 hover:bg-orange-600 transition-colors cursor-pointer shadow-sm shadow-orange-500/20"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-white" />
-            <span>Unsure? Take 2-min Quiz</span>
-          </button>
+          {/* Tab Switcher: Coach Matching & Skill Assessment vs Browse Directory */}
+          <div className="flex items-center p-1 rounded-2xl bg-slate-100 border border-slate-200">
+            <button
+              onClick={() => setActiveTab('match')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                activeTab === 'match'
+                  ? 'bg-orange-500 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Coach Match & Quiz
+            </button>
+            <button
+              onClick={() => setActiveTab('browse')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                activeTab === 'browse'
+                  ? 'bg-orange-500 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              All Academies
+            </button>
+          </div>
 
-          <button
-            onClick={handleResetFilters}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-100 transition-colors cursor-pointer shadow-2xs"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Reset</span>
-          </button>
+          {activeTab === 'browse' && (
+            <button
+              onClick={handleResetFilters}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-100 transition-colors cursor-pointer shadow-2xs"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Reset</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Filter Matrix Card (Light Theme) */}
-      <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200 shadow-sm space-y-5">
+      {activeTab === 'match' ? (
+        <CoachingSection
+          onSelectCoach={handleOpenTrial}
+          selectedLocality={selectedLocality !== 'All Localities' ? selectedLocality : 'Sahakar Nagar'}
+          initialSport={selectedSport !== 'all' ? selectedSport : 'Badminton'}
+        />
+      ) : (
+        <>
+          {/* Filter Matrix Card (Light Theme) */}
+          <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200 shadow-sm space-y-5">
         
         {/* Search */}
         <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-slate-50 rounded-xl border border-slate-200">
@@ -278,6 +306,8 @@ export const Coaches: React.FC = () => {
           </div>
         )}
       </div>
+      </>
+      )}
 
       {/* Trial Session Modal */}
       <CoachTrialModal
@@ -294,7 +324,7 @@ export const Coaches: React.FC = () => {
         isOpen={isQuizModalOpen}
         onClose={() => setIsQuizModalOpen(false)}
         sport={selectedSport !== 'all' ? selectedSport : 'Badminton'}
-        onSelectLevel={(level, score) => {
+        onSelectLevel={(level: SkillLevel, score: number) => {
           setSelectedLevel(level);
           setEvaluatedScore(score);
         }}
