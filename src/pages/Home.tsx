@@ -32,6 +32,7 @@ import {
 import { VenueCard } from '../components/VenueCard';
 import { CoachCard } from '../components/CoachCard';
 import { CoachTrialModal } from '../components/CoachTrialModal';
+import { SkillQuizModal, SkillLevel } from '../components/SkillQuizModal';
 
 interface HomeProps {
   onBookVenue: (venue: Venue) => void;
@@ -54,6 +55,7 @@ export const Home: React.FC<HomeProps> = ({
   // Coaching trial modal state
   const [activeTrialCoach, setActiveTrialCoach] = useState<Coach | null>(null);
   const [isTrialOpen, setIsTrialOpen] = useState(false);
+  const [isHomeQuizOpen, setIsHomeQuizOpen] = useState(false);
 
   // Hero Quick Sport Chips
   const quickSports = [
@@ -444,20 +446,42 @@ export const Home: React.FC<HomeProps> = ({
             </div>
           )
         ) : (
-          featuredCoaches.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredCoaches.map((coach) => (
-                <CoachCard
-                  key={coach.id}
-                  coach={coach}
-                  onBookTrial={(c) => {
-                    setActiveTrialCoach(c);
-                    setIsTrialOpen(true);
-                  }}
-                />
-              ))}
+          <div>
+            {/* Coaching Quiz Banner */}
+            <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-orange-50 border border-orange-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-extrabold text-orange-950">Not sure which academy batch matches your level?</h4>
+                  <p className="text-xs text-orange-800 mt-0.5">Take our 2-minute skill quiz to evaluate your beginner, intermediate, or advanced rating.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsHomeQuizOpen(true)}
+                className="px-3.5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-extrabold transition-colors shadow-xs flex items-center gap-1.5 self-start sm:self-auto shrink-0 cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-white" />
+                <span>Unsure? Take 2-min Quiz</span>
+              </button>
             </div>
-          ) : (
+
+            {featuredCoaches.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {featuredCoaches.map((coach) => (
+                  <CoachCard
+                    key={coach.id}
+                    coach={coach}
+                    onBookTrial={(c) => {
+                      setActiveTrialCoach(c);
+                      setIsTrialOpen(true);
+                    }}
+                  />
+                ))}
+              </div>
+            ) : (
             <div className="p-12 text-center rounded-2xl bg-white border border-slate-200 shadow-sm">
               <GraduationCap className="w-10 h-10 text-slate-400 mx-auto mb-3" />
               <h3 className="text-base font-bold text-slate-900">No coaches found matching this filter</h3>
@@ -471,8 +495,9 @@ export const Home: React.FC<HomeProps> = ({
               >
                 Reset Filters
               </button>
-            </div>
-          )
+              </div>
+            )}
+          </div>
         )}
       </section>
 
@@ -483,6 +508,18 @@ export const Home: React.FC<HomeProps> = ({
         onClose={() => {
           setIsTrialOpen(false);
           setActiveTrialCoach(null);
+        }}
+      />
+
+      {/* Skill Quiz Modal */}
+      <SkillQuizModal
+        isOpen={isHomeQuizOpen}
+        onClose={() => setIsHomeQuizOpen(false)}
+        sport={selectedSport !== 'all' ? selectedSport : 'Badminton'}
+        onSelectLevel={(level) => {
+          setIsHomeQuizOpen(false);
+          // Navigate to coaches with the evaluated level
+          navigate(`/coaches?level=${level}`);
         }}
       />
 

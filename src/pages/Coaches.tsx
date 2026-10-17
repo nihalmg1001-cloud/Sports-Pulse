@@ -16,6 +16,7 @@ import {
 import { Coach, COACHES_DATA, SPORTS, LOCALITIES } from '../data/sportsData';
 import { CoachCard } from '../components/CoachCard';
 import { CoachTrialModal } from '../components/CoachTrialModal';
+import { SkillQuizModal, SkillLevel } from '../components/SkillQuizModal';
 
 export const Coaches: React.FC = () => {
   const [selectedSport, setSelectedSport] = useState<string>('all');
@@ -24,6 +25,10 @@ export const Coaches: React.FC = () => {
   const [selectedLocality, setSelectedLocality] = useState<string>('All Localities');
   const [searchQuery, setSearchQuery] = useState<string>('');
   
+  // Standalone skill assessment quiz
+  const [isQuizModalOpen, setIsQuizModalOpen] = useState<boolean>(false);
+  const [evaluatedScore, setEvaluatedScore] = useState<number | null>(null);
+
   // Selected coach for trial modal
   const [activeTrialCoach, setActiveTrialCoach] = useState<Coach | null>(null);
   const [isTrialModalOpen, setIsTrialModalOpen] = useState<boolean>(false);
@@ -109,13 +114,23 @@ export const Coaches: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={handleResetFilters}
-          className="self-start md:self-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-100 transition-colors cursor-pointer shadow-2xs"
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-          <span>Reset Filters</span>
-        </button>
+        <div className="flex items-center gap-2 self-start md:self-auto">
+          <button
+            onClick={() => setIsQuizModalOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold text-white bg-orange-500 hover:bg-orange-600 transition-colors cursor-pointer shadow-sm shadow-orange-500/20"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-white" />
+            <span>Unsure? Take 2-min Quiz</span>
+          </button>
+
+          <button
+            onClick={handleResetFilters}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-100 transition-colors cursor-pointer shadow-2xs"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Reset</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter Matrix Card (Light Theme) */}
@@ -182,11 +197,18 @@ export const Coaches: React.FC = () => {
 
           {/* Experience / Skill Level */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-              Player Skill Level
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Player Skill Level
+              </label>
+              {evaluatedScore !== null && (
+                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-200">
+                  Quiz: {selectedLevel} ({evaluatedScore}/15)
+                </span>
+              )}
+            </div>
             <div className="flex rounded-xl bg-slate-100 p-1 border border-slate-200">
-              {['all', 'Beginner', 'Advanced'].map((lvl) => (
+              {['all', 'Beginner', 'Intermediate', 'Advanced'].map((lvl) => (
                 <button
                   key={lvl}
                   onClick={() => setSelectedLevel(lvl)}
@@ -196,7 +218,7 @@ export const Coaches: React.FC = () => {
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  {lvl === 'all' ? 'All Levels' : lvl}
+                  {lvl === 'all' ? 'All' : lvl}
                 </button>
               ))}
             </div>
@@ -264,6 +286,17 @@ export const Coaches: React.FC = () => {
         onClose={() => {
           setIsTrialModalOpen(false);
           setActiveTrialCoach(null);
+        }}
+      />
+
+      {/* Standalone 2-Minute Skill Quiz Modal */}
+      <SkillQuizModal
+        isOpen={isQuizModalOpen}
+        onClose={() => setIsQuizModalOpen(false)}
+        sport={selectedSport !== 'all' ? selectedSport : 'Badminton'}
+        onSelectLevel={(level, score) => {
+          setSelectedLevel(level);
+          setEvaluatedScore(score);
         }}
       />
 
