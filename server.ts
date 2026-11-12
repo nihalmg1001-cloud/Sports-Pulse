@@ -2,7 +2,7 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenAI, Type, ThinkingLevel } from '@google/genai';
 
 dotenv.config();
 
@@ -10,66 +10,123 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
-app.use(express.json());
+app.use(express.json({ limit: '2mb' }));
 
-const apiKey = process.env.GEMINI_API_KEY;
-const ai = new GoogleGenAI({
-  apiKey: apiKey,
-  httpOptions: {
-    headers: {
-      'User-Agent': 'aistudio-build',
+const getAiClient = () => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return null;
+  return new GoogleGenAI({
+    apiKey,
+    httpOptions: {
+      timeout: 20000,
+      headers: {
+        'User-Agent': 'aistudio-build',
+      },
+    },
+  });
+};
+
+const is429QuotaError = (err: any): boolean => {
+  if (!err) return false;
+  const status = err?.status || err?.statusCode || err?.code;
+  if (status === 429 || status === '429') return true;
+  const msg = String(err?.message || err || '').toLowerCase();
+  return (
+    msg.includes('429') ||
+    msg.includes('quota') ||
+    msg.includes('resource has been exhausted') ||
+    msg.includes('resource_exhausted') ||
+    msg.includes('rate limit') ||
+    msg.includes('too many requests')
+  );
+};
+
+const isTransientCapacityError = (err: any): boolean => {
+  if (!err) return false;
+  const status = err?.status || err?.statusCode || err?.code;
+  if (status === 503 || status === '503' || status === 504 || status === '504') return true;
+  const msg = String(err?.message || err || '').toLowerCase();
+  return (
+    msg.includes('503') ||
+    msg.includes('504') ||
+    msg.includes('unavailable') ||
+    msg.includes('overloaded') ||
+    msg.includes('capacity') ||
+    msg.includes('high demand') ||
+    msg.includes('timeout') ||
+    msg.includes('deadline_exceeded') ||
+    msg.includes('deadline expired') ||
+    msg.includes('failed to fetch')
+  );
+};
+
+const SYSTEM_PROMPT = `You are Pulse AI, an unrestricted, intelligent, and friendly general-purpose AI assistant built into the Sports Pulse platform in Bengaluru.
+
+Core Capabilities — Answer Anything:
+- You have NO topic restrictions and NO word-count or length limits. Answer ANY kind of question across any domain thoroughly, accurately, and naturally.
+- Handle everything from software engineering, debugging, code generation, math, science, history, philosophy, writing, recipes, study guides, finance, travel planning, and creative brainstorming to fitness, nutrition, casual conversation, and Bengaluru local life.
+- Never decline non-sports questions and never awkwardly force sports references into unrelated topics. Address the user's actual question directly and completely.
+- Adapt response length to fit the question: crisp and direct for quick questions; comprehensive, well-structured, and detailed for complex tutorials, explanations, itineraries, code examples, or analyses.
+- Use clean Markdown formatting (headings, bullet lists, numbered steps, bold emphasis, inline code, and fenced code blocks with language tags) whenever helpful for readability.
+
+Persona & Tone:
+- Polished, warm, witty, and approachable with subtle modern Bengaluru energy when greeting or chatting casually.
+- Strictly avoid rural/halli colloquialisms and never use street slang like "macha", "da", or "guru".
+
+Optional Bengaluru Sports Venue Context (Use ONLY when the user asks about sports venues, courts, turfs, pools, or places to play in Bengaluru):
+- Velocity Sports Arena (ID: "pulse-arena-yelahanka"): Yelahanka, North Bengaluru. Badminton, Pickleball. 8 BWF-approved synthetic courts with glare-free LED lighting. ₹450/hr.
+- Apex Sky Turf & Arena (ID: "rooftop-turf-indiranagar"): Indiranagar, East Bengaluru. Football, Cricket. Rooftop 5-a-side FIFA Quality Pro 50mm turf. ₹1,100/hr (~₹110/person for 10 players).
+- Grand Slam Tennis Club (ID: "grand-slam-tennis-koramangala"): Koramangala, South Bengaluru. Tennis, Pickleball. 4 US Open DecoTurf acrylic hard courts with ball machines. ₹750/hr.
+- BlueZone Aquatics Center (ID: "olympic-aquatics-sahakar-nagar"): Sahakar Nagar, North Bengaluru. Swimming. Heated semi-Olympic 25m chlorine-free ozone pool. ₹300/hr.
+- Strikers Box Cricket & Nets (ID: "whitefield-cricket-hub"): Whitefield, East Bengaluru. Cricket, Football. High-speed automated bowling machines, astroturf pitch. ₹800/hr.
+- Pulse Pickleball & Padel Hub (ID: "hsr-pickleball-sanctuary"): HSR Layout, South-East Bengaluru. Pickleball, Badminton. 6 tournament-regulation cushioned courts. ₹550/hr.
+- Jayanagar Elite Badminton Club (ID: "jayanagar-smash-badminton"): Jayanagar, South Bengaluru. Badminton. 6 teak wood sprung flooring courts. ₹400/hr.
+- Sankey Multi-Sport Arena (ID: "malleshwaram-hoops-basketball"): Malleshwaram, West Bengaluru. Basketball, Badminton, Tennis. FIBA certified maple hardwood court near Sankey Tank. ₹600/hr.
+
+Output Format:
+Always return a structured JSON object with:
+- "reply": your complete, well-formatted Markdown answer (any length needed to answer thoroughly).
+- "recommendedVenueIds": matching venue IDs ONLY when the user is asking about sports venues, courts, bookings, or places to play in Bengaluru; otherwise strictly return [].`;
+
+const RESPONSE_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    reply: {
+      type: Type.STRING,
+      description: 'Complete, unrestricted Markdown answer to the user query',
+    },
+    recommendedVenueIds: {
+      type: Type.ARRAY,
+      items: { type: Type.STRING },
+      description: 'Matching Bengaluru venue IDs ONLY when the query relates to finding or booking local sports venues; otherwise empty array []',
     },
   },
-});
-
-const SYSTEM_PROMPT = `You are Pulse AI, the intelligent sports & fitness concierge for Bengaluru.
-Your personality is professional, welcoming, energetic, and knowledgeable with authentic modern Bengaluru vibes.
-Strictly avoid rural/halli colloquialisms and never use street slang like "macha", "da", "guru", or over-the-top dialect. Keep your tone polished, witty, and courteous.
-You can handle casual talk, greetings, fitness queries, and sports questions naturally strictly under 200 words.
-
-When relevant to sports, courts, booking, coaching, localities, or prices, actively recommend matching venues from this verified Bengaluru database:
-- Velocity Sports Arena (ID: "pulse-arena-yelahanka"): Yelahanka, North Bengaluru. Sports: Badminton, Pickleball. 8 BWF-approved synthetic courts with glare-free LED lighting. Price: ₹450/hr.
-- Apex Sky Turf & Arena (ID: "rooftop-turf-indiranagar"): Indiranagar, East Bengaluru. Sports: Football, Cricket. Rooftop 5-a-side FIFA Quality Pro 50mm turf with city views. Price: ₹1,100/hr (approx ₹110/person for 10 players).
-- Grand Slam Tennis Club (ID: "grand-slam-tennis-koramangala"): Koramangala, South Bengaluru. Sports: Tennis, Pickleball. 4 US Open DecoTurf acrylic hard courts with automated ball machines. Price: ₹750/hr.
-- BlueZone Aquatics Center (ID: "olympic-aquatics-sahakar-nagar"): Sahakar Nagar, North Bengaluru. Sports: Swimming. Heated semi-Olympic 25m ozone-purified pool (chlorine-free). Price: ₹300/hr.
-- Strikers Box Cricket & Nets (ID: "whitefield-cricket-hub"): Whitefield, East Bengaluru. Sports: Cricket, Football. High-speed automated bowling machines, heavy-density astroturf pitch. Price: ₹800/hr.
-- Pulse Pickleball & Padel Hub (ID: "hsr-pickleball-sanctuary"): HSR Layout, South-East Bengaluru. Sports: Pickleball, Badminton. 6 tournament-regulation cushioned polymer tile courts. Price: ₹550/hr.
-- Jayanagar Elite Badminton Club (ID: "jayanagar-smash-badminton"): Jayanagar, South Bengaluru. Sports: Badminton. 6-court teak wood sprung flooring. Price: ₹400/hr.
-- Sankey Multi-Sport Arena (ID: "malleshwaram-hoops-basketball"): Malleshwaram, West Bengaluru. Sports: Basketball, Badminton, Tennis. FIBA certified maple hardwood surface near Sankey Tank. Price: ₹600/hr.
-
-Instructions:
-1. Speak naturally, warmly, and professionally. If user sends casual greetings ("hi", "hey", "how are you"), reply warmly and casually.
-2. When mentioning or recommending venues, give helpful context like neighborhood tips (e.g. morning court slots, traffic corridors near ORR/Indiranagar) and pricing in INR (₹).
-3. Keep answers snappy, clear, and strictly under 200 words.
-4. If recommending venues, return structured JSON:
-   - "reply": your conversational answer string
-   - "recommendedVenueIds": an array of matching venue IDs (e.g. ["pulse-arena-yelahanka"]) that are relevant to recommend. If no specific venues are recommended (e.g. for casual greetings or general chit-chat), return an empty array [].`;
+  required: ['reply', 'recommendedVenueIds'],
+};
 
 app.post('/api/chat', async (req, res) => {
   try {
     const { message, history } = req.body;
 
-    if (!message || typeof message !== 'string') {
-      res.status(400).json({ error: 'Message is required' });
+    if (!message || typeof message !== 'string' || !message.trim()) {
+      res.status(400).json({ error: 'Message is required.' });
       return;
     }
 
-    if (!apiKey) {
-      console.warn('GEMINI_API_KEY is not set in environment.');
-      res.json({
-        reply: `Namaskara! I'm here to help you find and book the best courts and academies across Bengaluru. Let me know what sport or locality you are interested in!`,
-        recommendedVenueIds: ['pulse-arena-yelahanka', 'rooftop-turf-indiranagar'],
+    const ai = getAiClient();
+    if (!ai) {
+      res.status(500).json({
+        error: 'GEMINI_API_KEY is not configured on the server. Please add your Gemini API key in Settings > Secrets.',
       });
       return;
     }
 
-    // Build contents with optional chat history
-    const contents: any[] = [];
+    const contents: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
     if (Array.isArray(history) && history.length > 0) {
-      for (const turn of history.slice(-6)) {
-        if (turn.role && turn.text) {
+      for (const turn of history) {
+        if (turn && typeof turn.text === 'string' && turn.text.trim()) {
           contents.push({
-            role: turn.role === 'ai' ? 'model' : 'user',
+            role: turn.role === 'ai' || turn.role === 'model' ? 'model' : 'user',
             parts: [{ text: turn.text }],
           });
         }
@@ -77,125 +134,120 @@ app.post('/api/chat', async (req, res) => {
     }
     contents.push({
       role: 'user',
-      parts: [{ text: message }],
+      parts: [{ text: message.trim() }],
     });
 
-    let outputText = '';
-    
-    // Attempt with primary model, retry once on transient failure
-    try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.5-flash-lite',
+    const callModel = (model: string) => {
+      const config: Record<string, any> = {
+        systemInstruction: SYSTEM_PROMPT,
+        responseMimeType: 'application/json',
+        responseSchema: RESPONSE_SCHEMA,
+      };
+      if (model === 'gemini-3.8-flash') {
+        config.thinkingConfig = { thinkingLevel: ThinkingLevel.LOW };
+      }
+      return ai.models.generateContent({
+        model,
         contents,
-        config: {
-          systemInstruction: SYSTEM_PROMPT,
-          temperature: 0.7,
-          maxOutputTokens: 250,
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              reply: {
-                type: Type.STRING,
-                description: 'The natural conversational response to the user',
-              },
-              recommendedVenueIds: {
-                type: Type.ARRAY,
-                items: { type: Type.STRING },
-                description: 'IDs of recommended venues from the database, if any',
-              },
-            },
-            required: ['reply', 'recommendedVenueIds'],
-          },
-        },
+        config,
       });
-      outputText = response.text || '';
+    };
+
+    let response: any = null;
+    let lastError: any = null;
+
+    // Try primary model gemini-3.8-flash with backoff retry on 429
+    try {
+      response = await callModel('gemini-3.8-flash');
+      lastError = null;
     } catch (primaryErr: any) {
-      console.warn('Primary Gemini call error, retrying:', primaryErr?.message || primaryErr);
-      try {
-        const retryResponse = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents,
-          config: {
-            systemInstruction: SYSTEM_PROMPT,
-            responseMimeType: 'application/json',
-            responseSchema: {
-              type: Type.OBJECT,
-              properties: {
-                reply: {
-                  type: Type.STRING,
-                  description: 'The natural conversational response to the user',
-                },
-                recommendedVenueIds: {
-                  type: Type.ARRAY,
-                  items: { type: Type.STRING },
-                  description: 'IDs of recommended venues from the database, if any',
-                },
-              },
-              required: ['reply', 'recommendedVenueIds'],
-            },
-          },
-        });
-        outputText = retryResponse.text || '';
-      } catch (retryErr: any) {
-        console.error('Gemini retry also encountered error:', retryErr?.message || retryErr);
+      lastError = primaryErr;
+      if (is429QuotaError(primaryErr)) {
+        console.warn('[Pulse AI] 429 Quota Exceeded on gemini-3.8-flash. Waiting 2000ms before retry...');
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        try {
+          response = await callModel('gemini-3.8-flash');
+          lastError = null;
+        } catch (retryErr: any) {
+          lastError = retryErr;
+        }
       }
     }
 
-    if (outputText) {
-      try {
-        const parsed = JSON.parse(outputText);
-        res.json({
-          reply: parsed.reply || outputText,
-          recommendedVenueIds: Array.isArray(parsed.recommendedVenueIds) ? parsed.recommendedVenueIds : [],
-        });
-        return;
-      } catch (parseErr) {
-        res.json({
-          reply: outputText,
-          recommendedVenueIds: [],
-        });
-        return;
+    // Fallback to fast text models if primary encounters 429, transient timeout/503/504, or 404
+    if (!response && lastError) {
+      const errStatus = lastError?.status || lastError?.statusCode || lastError?.code;
+      const errMsg = String(lastError?.message || '').toLowerCase();
+      const shouldFallback =
+        is429QuotaError(lastError) ||
+        isTransientCapacityError(lastError) ||
+        errStatus === 404 ||
+        errMsg.includes('not found');
+
+      if (shouldFallback) {
+        for (const fallbackModel of ['gemini-3.1-flash-lite', 'gemini-flash-latest']) {
+          try {
+            console.warn(`[Pulse AI] Switching to fallback model ${fallbackModel}...`);
+            response = await callModel(fallbackModel);
+            lastError = null;
+            break;
+          } catch (fallbackErr: any) {
+            lastError = fallbackErr;
+          }
+        }
       }
     }
 
-    // Graceful contextual fallback if model is temporarily unavailable due to demand
-    const lower = message.toLowerCase();
-    let reply = "Namaskara! I'm your Sports Pulse concierge. I can help with court reservations, turf availability, coaching academies, or match rates around Bengaluru.";
-    let fallbackVenues: string[] = [];
+    if (!response && lastError) {
+      console.error('[Pulse AI] Gemini API error:', {
+        message: lastError?.message,
+        status: lastError?.status || lastError?.statusCode || lastError?.code,
+      });
 
-    if (lower.includes('badminton') || lower.includes('shuttle')) {
-      reply = "For badminton, Velocity Sports Arena in Yelahanka has 8 BWF synthetic courts at ₹450/hr, and Jayanagar Elite Badminton Club features 6 sprung teak wood courts at ₹400/hr.";
-      fallbackVenues = ['pulse-arena-yelahanka', 'jayanagar-smash-badminton'];
-    } else if (lower.includes('football') || lower.includes('turf') || lower.includes('soccer')) {
-      reply = "Looking for football? Apex Sky Turf in Indiranagar is a 5-a-side rooftop turf with LED floodlights (₹1,100/hr, ~₹110/person for 10 players).";
-      fallbackVenues = ['rooftop-turf-indiranagar'];
-    } else if (lower.includes('tennis')) {
-      reply = "Grand Slam Tennis Club in Koramangala features 4 US Open DecoTurf acrylic courts with ball machines (₹750/hr).";
-      fallbackVenues = ['grand-slam-tennis-koramangala'];
-    } else if (lower.includes('pickleball')) {
-      reply = "Pulse Pickleball Hub in HSR Layout has 6 tournament regulation polymer deck courts at ₹550/hr.";
-      fallbackVenues = ['hsr-pickleball-sanctuary'];
-    } else if (lower.includes('swim') || lower.includes('pool')) {
-      reply = "BlueZone Aquatics Center in Sahakar Nagar features a heated semi-Olympic ozone pool at ₹300/hr.";
-      fallbackVenues = ['olympic-aquatics-sahakar-nagar'];
-    } else if (lower.includes('yelahanka')) {
-      reply = "In Yelahanka, Velocity Sports Arena offers premier BWF badminton and pickleball courts from ₹450/hr.";
-      fallbackVenues = ['pulse-arena-yelahanka'];
-    } else if (lower.includes('indiranagar')) {
-      reply = "In Indiranagar, Apex Sky Turf offers a rooftop 5-a-side football turf overlooking 100ft road.";
-      fallbackVenues = ['rooftop-turf-indiranagar'];
+      if (is429QuotaError(lastError) || isTransientCapacityError(lastError)) {
+        res.status(is429QuotaError(lastError) ? 429 : 503).json({
+          isQuotaError: true,
+          error: 'Pulse AI is currently handling heavy traffic. Please wait a moment and try again!',
+        });
+        return;
+      }
+
+      let cleanMessage = lastError?.message || 'Failed to generate AI response.';
+      if (typeof cleanMessage === 'string' && cleanMessage.trim().startsWith('{')) {
+        try {
+          const parsedErr = JSON.parse(cleanMessage);
+          cleanMessage = parsedErr?.error?.message || parsedErr?.message || cleanMessage;
+        } catch {
+          // Keep original string if not valid JSON
+        }
+      }
+
+      const status = Number(lastError?.status || lastError?.statusCode) || 500;
+      const safeStatus = status >= 400 && status < 600 ? status : 500;
+      res.status(safeStatus).json({
+        error: cleanMessage,
+      });
+      return;
     }
 
-    res.json({
-      reply,
-      recommendedVenueIds: fallbackVenues,
-    });
+    const rawText = response?.text || '';
+    try {
+      const parsed = JSON.parse(rawText);
+      res.json({
+        reply: parsed.reply || rawText,
+        recommendedVenueIds: Array.isArray(parsed.recommendedVenueIds) ? parsed.recommendedVenueIds : [],
+      });
+    } catch {
+      const cleaned = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+      res.json({
+        reply: cleaned || rawText,
+        recommendedVenueIds: [],
+      });
+    }
   } catch (error: any) {
-    console.error('Error generating response from Gemini:', error);
+    console.error('[Pulse AI] Unexpected server error:', error);
     res.status(500).json({
-      error: 'Failed to generate response',
-      details: error?.message || 'Unknown error',
+      error: error?.message || 'Unexpected error while processing your request.',
     });
   }
 });
